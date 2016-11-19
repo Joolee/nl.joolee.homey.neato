@@ -9,6 +9,12 @@
 		"name": "Peter Overtoom",
 		"email": "athom@joolee.nl"
 	},
+	"contributors": {
+		"developers": [{
+			"name": "Mark Swift",
+			"email": "markaswift@gmail.com"
+		}]
+	},
 	"drivers": [{
 		"id": "botvac-connected",
 		"name": {
@@ -151,19 +157,19 @@
 			}, {
 				"name": "spot_width",
 				"type": "range",
-          	    "min": 100,
-            	"max": 400,
-            	"step": 1,
-            	"label": "cm (Width)",
-            	"labelDecimals": 0
+				"min": 100,
+				"max": 400,
+				"step": 1,
+				"label": "cm (Width)",
+				"labelDecimals": 0
 			}, {
 				"name": "spot_height",
 				"type": "range",
-          	    "min": 100,
-            	"max": 400,
-            	"step": 1,
-            	"label": "cm (Height)",
-            	"labelDecimals": 0
+				"min": 100,
+				"max": 400,
+				"step": 1,
+				"label": "cm (Height)",
+				"labelDecimals": 0
 			}]
 		}]
 	}
