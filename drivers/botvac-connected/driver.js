@@ -15,12 +15,12 @@ module.exports = new class {
 		Homey.log('Devices:', devices);
 		
 		devices.forEach(this.initRobot.bind(this));
-		Homey.manager('flow').on('action.start_cleaning', this.action_start_cleaning.bind(this));
+		Homey.manager('flow').on('action.start_cleaning', this.action_start_house_cleaning.bind(this));
 
 		callback(null, true);
 	}
 
-	action_start_cleaning( callback, args ){
+	action_start_house_cleaning( callback, args ){
 		Homey.log("Start cleaning", this.robots[args.device.id].name);
 		
 		this.robots[args.device.id].startCleaning((error, result) => {
