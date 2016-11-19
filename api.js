@@ -11,6 +11,15 @@ module.exports = [
     description: 'Authorize Homey',
     method: 'PUT',
     path: '/authorize/',
-    fn: (callback, args) => Homey.app.neato.authorize(callback)
+    fn: (callback, args) => {
+		Homey.app.neato.authorize(callback)
+			.then((user) => {
+				Homey.manager('api').realtime('authorized', true);
+			})
+			.catch((error) => {
+				Homey.manager('api').realtime('authorized', false);
+			});
+
+	}
   }
 ];

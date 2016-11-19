@@ -9,6 +9,7 @@ module.exports = class Neato {
 		this.oauthurl = "https://" + this.config.oauthHost + "/oauth2/authorize?client_id=" + this.config.id +
 		  "&scope=control_robots+public_profile&response_type=code&redirect_uri=" + this.config.callback;
 		
+		this.authorized = false;
 		this.isAuthorised();
 	}
 	
@@ -16,36 +17,42 @@ module.exports = class Neato {
 	authorize(callback) {
 		Homey.log("Requested OAuth2 authorisation url");
 		
-		Homey.manager('cloud').generateOAuth2Callback(
-			this.oauthurl,
-			// Return a Homey OAuth2 url to client
-			(err, result) => {
-				callback(err, {url: result});
-			},
-			// This is called when authorisation has been granted or denied by the user
-			(err, code) => {
-				Homey.log("Received code, swapping for token now", code);
+		return new Promise((resolve, reject) => {
+			Homey.manager('cloud').generateOAuth2Callback(
+				this.oauthurl,
+				// Return a Homey OAuth2 url to client
+				(err, result) => {
+					callback(err, {url: result});
+				},
+				// This is called when authorisation has been granted or denied by the user
+				(err, code) => {
+					Homey.log("Received code, swapping for token now", code);
 
-				var failed = (error) => {
-					Homey.log("Neato->authorize->Failure!", error);
+					var failed = (error) => {
+						reject(error);
+						Homey.log("Neato->authorize->Failure!", error);
+					}
+					
+					this.getToken.call(this, code)
+						.then((auth_data) => {
+							if(auth_data.error) {
+								failed(auth_data.error + ': ' + auth_data.error_description);
+							}
+							else
+							{
+								Homey.log("Neato->authorize->Success!", auth_data);
+								
+								this.isAuthorised.call(this)
+									.then((user) => {
+										resolve(user);
+									})
+									.catch(failed);
+							}
+						})
+						.catch(failed);
 				}
-				
-				this.getToken.call(this, code)
-					.then((auth_data) => {
-						
-						Homey.log("Neato->authorize->Success!", auth_data);
-						this.config.authorisation = auth_data;
-						
-						this.isAuthorised.call(this)
-							.then((user) => {
-								Homey.log('User information: ', user);
-								Homey.manager('api').realtime('authorized', true);
-							})
-							.catch(failed);
-					})
-					.catch(failed);
-			}
-		);
+			);
+		});
 	}
 	
 	// Doesn't seem to work but still try
@@ -69,14 +76,16 @@ module.exports = class Neato {
 			}
 		)
 			.then((response) => {
-				Homey.log("Success", response)
+				Homey.log("Token revoked")
 			})
 			.catch((error) => {
-				Homey.log("error", error)
+				Homey.log("Something went wrong while revoking token", error)
 			});
 		
+		this.authorized = false;
 		Homey.manager('settings').set('authorized', false);
 		Homey.manager('settings').set('user', null);
+		Homey.manager('settings').set('accessToken', null);
 		Homey.manager('api').realtime('authorized', false);
 		callback(null, true);
 	}
@@ -113,6 +122,7 @@ module.exports = class Neato {
 		return new Promise((resolve, reject) => {
 			
 			var failed = (message) => {
+				this.authorized = false;
 				Homey.manager('settings').set('authorized', false);
 				Homey.manager('settings').set('user', null);
 				
@@ -120,13 +130,19 @@ module.exports = class Neato {
 				reject("Not authorised: " + message)
 			}
 			
-			var token = Homey.manager('settings').get('accessToken');
+			// This might prove troubling when somebody revokes the token
+			// if(this.authorized)
+			// {
+				// resolve(Homey.manager('settings').get('user'))
+			// }
 			if(typeof(Homey.manager('settings').get('accessToken')) == 'undefined')
 			{
 				failed("No token stored");
 			}
 			else
 			{
+				var token = Homey.manager('settings').get('accessToken');
+				Homey.log('Using token', token);
 				http.get(
 					{
 						protocol: 'https:',
@@ -142,6 +158,7 @@ module.exports = class Neato {
 					.then((response) => {
 						if(response.response.statusCode == '200')
 						{
+							this.authorized = true;
 							Homey.manager('settings').set('authorized', true);
 							Homey.manager('settings').set('user', response.data);
 							Homey.log("Authorised", response.data);
@@ -157,5 +174,44 @@ module.exports = class Neato {
 			
 		});
 		Homey.log("Checked authorisation");
+	}
+	
+	getRobots() {
+		Homey.log('Finding robot buddies');
+		return new Promise((resolve, reject) => {
+			this.isAuthorised.call(this)
+				.catch(failed);
+			
+			var failed = (message) => {
+				Homey.log("Couldn't fetch robots: ", message);
+				reject("Couldn't fetch robots: " + message)
+			}
+
+			var token = Homey.manager('settings').get('accessToken');
+			http.get(
+				{
+					protocol: 'https:',
+					hostname: this.config.beehive,
+					path: "/users/me/robots",
+					headers: {
+						"accept": "application/vnd.neato.beehive.v1+json",
+						"Authorization": "Bearer " + token,
+					},
+					json: true
+				}
+			)
+				.then((response) => {
+					if(response.response.statusCode == '200')
+					{
+						resolve(response.data)
+					}
+					else
+					{
+						Homey.log('I\'m bad at finding friends :(', response);
+						failed(response.data.message);
+					}
+				})
+				.catch(failed);
+		});
 	}
 }

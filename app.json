@@ -11,15 +11,48 @@
 	},
 	"drivers": [
 		{
-			"id": "neato",
+			"id": "botvac-connected",
 			"name": {
-				"en": "Neato"
+				"en": "Neato Botvac Connected"
 			},
 			"dependencies": {
 				"request": "*"
 			},
 			"class": "",
-			"capabilities": []
+			"capabilities": [],
+			"pair": [
+			  {
+				"id": "start"
+			  },
+			  {
+				"id": "list_devices",
+				"template": "list_devices",
+				"navigation": {
+				  "next": "add_devices"
+				}
+			  },
+			  {
+				"id": "add_devices",
+				"template": "add_devices"
+			  }
+			]
 		}
-	]
+	],
+	"flow": {
+		"actions": [
+			{
+				"id": "start_cleaning",
+				"title": {
+					"en": "Start Cleaning"
+				},
+				"args": [
+					{
+						"name": "device",
+						"type": "device",
+						"filter": "driver_id=botvac-connected"
+					}
+				]
+			}
+		]
+	}
 }

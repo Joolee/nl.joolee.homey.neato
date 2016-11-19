@@ -72,13 +72,12 @@
     var deauthorizeContainer = document.getElementById('account-container');
     var authorizeContainer = document.getElementById('authorize-container');
     function setAuthorizationState(isAuthorized) {
-        if (isAuthorized) {
+        fetchAuthUrl(); // Refresh auth url in background
+		if (isAuthorized) {
             var accountContainer = document.getElementById('account');
             authorizeContainer.style.display = 'none';
             deauthorizeContainer.style.display = 'block';
-            fetchAuthUrl(); // Refresh auth url in background
             Homey.get('user', function (err, user) {
-				
                 document.getElementById('accountname').innerHTML = user.first_name + " " + user.last_name;
                 document.getElementById('accountcompany').innerHTML = user.company.length ? user.company : '-';
             });
