@@ -1,0 +1,25 @@
+{
+	"id": "nl.joolee.neato",
+	"name": {
+		"en": "Neato Robotics"
+	},
+	"version": "0.0.1",
+	"compatibility": "0.x || 1.x",
+	"author": {
+		"name": "Peter Overtoom",
+		"email": "athom@joolee.nl"
+	},
+	"drivers": [
+		{
+			"id": "neato",
+			"name": {
+				"en": "Neato"
+			},
+			"dependencies": {
+				"request": "*"
+			},
+			"class": "",
+			"capabilities": []
+		}
+	]
+}

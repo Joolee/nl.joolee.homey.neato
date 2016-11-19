@@ -1,0 +1,21 @@
+{
+	"settings": {
+		"title": "Neato Settings",
+		"warning": "Something went wrong, please try again",
+		"auth": {
+			"connected_header": "Account information",
+			"connected_with": "Currently you are logged in with this Neato Robotics account",
+			"authorize_intro": "To give Homey access to your Neato account, click the button below!",
+			"auth_title": "Authorize Homey",
+			"deauth_title": "Deauthorize Homey",
+			"deauthorize_notice": "Note: Due to a bug in the Neato API, access is not completely revoked. We throw do away the key but if you don't trust us, you can revoke our access on the 'Edit Account' page on <a href=\"https://neatorobotics.com/log-in/\">My Neato</a>.",
+			"deauthorize_intro": "If you want to disconnect Homey from your Neato account, click the button below.",
+			"deauthorize": "Withdraw Homey's authorization",
+			"authorize": "Authorize Homey to use your Neato account!"
+		},
+		"account": {
+			"name": "Name",
+			"company": "Company"			
+		}
+	}
+}
