@@ -69,7 +69,7 @@ module.exports = new class {
 					}
 				});
 				
-				Homey.log('Found devices: ' + foundDevices);
+				Homey.log('Found devices: ', foundDevices);
 				
 				callback(null, foundDevices);
 			});
