@@ -75,9 +75,7 @@ module.exports = new class {
 			});
 		});
 	}
-	
-	
-	
+		
 	initRobot(robot) {
 		module.exports.setUnavailable( robot, "Robot not available at the moment" );
 		module.exports.getSettings( robot, ( err, settings ) => {
