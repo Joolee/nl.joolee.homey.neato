@@ -1,27 +1,55 @@
 "use strict";
 
 const Robot = require('./robot');
-const NeatoApi = Homey.app.neato;
+const neato = Homey.app.neato;
 
 module.exports = new class {
 
 	constructor() {
+		this.devices = {};
 		this.robots = {};
 		this.init = this._init.bind(this);
 		this.pair = this._pair.bind(this);
 	}
 	
 	_init(devices, callback) {
+		this.devices = devices;
+		
 		Homey.log('Devices:', devices);
 		
-		devices.forEach(this.initRobot.bind(this));
+		// Do authorisation stuff when needed
+		neato.on('authorized', (authorized) => {
+			if(authorized)
+			{
+				Homey.log('Now init devices');
+				this.initDevices();
+			}
+			else
+			{
+				Homey.log('Now remove devices');
+				this.removeDevices();
+			}
+		});
+		
+		// Force once for startup :)
+		neato.emit('authorized', neato.isAuthorised(true));
+		
+
 		Homey.manager('flow').on('action.start_house_cleaning', this.action_start_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.stop_house_cleaning', this.action_stop_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.pause_house_cleaning', this.action_pause_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.resume_house_cleaning', this.action_resume_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.send_to_base', this.action_send_to_base.bind(this));
 		Homey.manager('flow').on('action.start_spot_cleaning', this.action_start_spot_cleaning.bind(this));
+<<<<<<< HEAD
 
+=======
+		this.added = this._device_added.bind(this);
+		this.deleted = this._device_deleted.bind(this);
+		// this.renamed = this._device_renamed.bind(this);
+		// this.settings = this._device_settings.bind(this);
+		
+>>>>>>> Joolee/master
 		callback(null, true);
 	}
 
@@ -126,16 +154,64 @@ module.exports = new class {
 			});
 		});
 	}
-		
-	initRobot(robot) {
+
+	_device_added(robot, callback) {
+		console.log('Added device: ', robot);
+		this.initRobot(robot);
+	}
+	
+	_device_deleted(robot) {
+		console.log('Removed device: ', robot);
+		this.removeRobot(robot);
+	}
+	
+	initDevices() {
+		this.devices.forEach(this.initRobot.bind(this));
+	}
+
+	removeDevices() {
+		this.devices.forEach(this.removeRobot.bind(this));
+	}
+	
+	removeRobot(robot) {
 		module.exports.setUnavailable( robot, "Robot not available at the moment" );
+		
+		if(this.robots[robot.id])
+		{
+			Homey.log('Removing robot', robot);
+			delete this.robots[robot.id];
+		}
+	}
+	
+	initRobot(robot) {
+		// Start clean
+		this.removeRobot(robot);
+		
 		module.exports.getSettings( robot, ( err, settings ) => {
-			
 			Homey.log('Initialising robot', robot.id, settings);
-			this.robots[robot.id] = new Robot(settings.name, settings.serial, settings.secret_key);
-			this.robots[robot.id].getState((error, robotStatus) => Homey.log(robotStatus));
 			
-			module.exports.setAvailable( robot );
+			this.robots[robot.id] = new Robot(settings.name, settings.serial, settings.secret_key);
+			
+			// Get robot state on initialise
+			this.robots[robot.id].getState((error, robotStatus) => {
+				Homey.log(robotStatus)
+				if(!error && robotStatus.meta.modelName == 'BotVacConnected')
+				{
+					module.exports.setAvailable( robot );
+				}
+				else if(error)
+				{
+					Homey.log('Cannot set robot available because', error);
+					this.removeRobot(robot);
+					module.exports.setUnavailable( robot, error );
+				}
+				else
+				{
+					Homey.log('Cannot set robot available because model is unknown: ', robotStatus.meta.modelName);
+					this.removeRobot(robot);
+					module.exports.setUnavailable( robot, 'Model ' + robotStatus.meta.modelName + ' is unknown' );
+				}
+			});
 			
 		});
 	}
