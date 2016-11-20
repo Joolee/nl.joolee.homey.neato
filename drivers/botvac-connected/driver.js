@@ -16,6 +16,10 @@ module.exports = new class {
 		
 		devices.forEach(this.initRobot.bind(this));
 		Homey.manager('flow').on('action.start_house_cleaning', this.action_start_house_cleaning.bind(this));
+		Homey.manager('flow').on('action.stop_house_cleaning', this.action_stop_house_cleaning.bind(this));
+		Homey.manager('flow').on('action.pause_house_cleaning', this.action_pause_house_cleaning.bind(this));
+		Homey.manager('flow').on('action.resume_house_cleaning', this.action_resume_house_cleaning.bind(this));
+		Homey.manager('flow').on('action.send_to_base', this.action_send_to_base.bind(this));
 
 		callback(null, true);
 	}
@@ -24,7 +28,43 @@ module.exports = new class {
 		Homey.log("Start cleaning", this.robots[args.device.id].name);
 		
 		this.robots[args.device.id].startCleaning((error, result) => {
-			Homey.log("Cleaning start: ", error, result)
+			Homey.log("Start cleaning: ", error, result)
+			callback( null, error );
+		});
+	}
+	
+	action_stop_house_cleaning( callback, args ){
+		Homey.log("Stop cleaning", this.robots[args.device.id].name);
+		
+		this.robots[args.device.id].stopCleaning((error, result) => {
+			Homey.log("Stop cleaning: ", error, result)
+			callback( null, error );
+		});
+	}
+	
+	action_pause_house_cleaning( callback, args ){
+		Homey.log("Pause cleaning", this.robots[args.device.id].name);
+		
+		this.robots[args.device.id].pauseCleaning((error, result) => {
+			Homey.log("Pause stop: ", error, result)
+			callback( null, error );
+		});
+	}
+	
+	action_resume_house_cleaning( callback, args ){
+		Homey.log("Resume cleaning", this.robots[args.device.id].name);
+		
+		this.robots[args.device.id].resumeCleaning((error, result) => {
+			Homey.log("Resume cleaning: ", error, result)
+			callback( null, error );
+		});
+	}
+	
+	action_send_to_base( callback, args ){
+		Homey.log("Send to base", this.robots[args.device.id].name);
+		
+		this.robots[args.device.id].sendToBase((error, result) => {
+			Homey.log("Send to base: ", error, result)
 			callback( null, error );
 		});
 	}
