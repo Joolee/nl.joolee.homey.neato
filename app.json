@@ -195,6 +195,22 @@
 				"label": "cm (Height)",
 				"labelDecimals": 0
 			}]
-		}]
+		}],
+        "triggers": [
+            {
+                "id": "docked",
+                "title": {
+                    "en": "Is docked",
+                    "nl": "Verbonden met dock"
+                },
+                "args": [
+                    {
+                        "name": "device",
+                        "type": "device",
+                        "filter": "driver_id=botvac-connected"
+                    }
+                ]
+			}
+		]
 	}
 }

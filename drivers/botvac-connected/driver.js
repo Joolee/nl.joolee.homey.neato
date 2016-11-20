@@ -44,7 +44,7 @@ module.exports = new class {
 		this.added = this._device_added.bind(this);
 		this.deleted = this._device_deleted.bind(this);
 		// this.renamed = this._device_renamed.bind(this);
-		// this.settings = this._device_settings.bind(this);
+		this.settings = this._device_settings.bind(this);
 		
 		callback(null, true);
 	}
@@ -161,6 +161,13 @@ module.exports = new class {
 		this.removeRobot(robot);
 	}
 	
+	_device_settings(robot, newSettingsObj, oldSettingsObj, changedKeysArr, callback) {
+		// Don't do difficult stuff. Just re-create the robot
+		console.log('Settings changed. Reinitialising device.', changedKeysArr);
+		this.initRobot(robot);
+		callback( null, true );
+	}
+	
 	initDevices() {
 		this.devices.forEach(this.initRobot.bind(this));
 	}
@@ -209,7 +216,7 @@ module.exports = new class {
 					module.exports.setUnavailable( robot, 'Model ' + robotStatus.meta.modelName + ' is unknown' );
 				}
 				
-				this.robotStateChanged(robot, null, robotStatus);
+				this.robotStatusUpdate(robot, null, robotStatus);
 			});
 			
 			this.robots[robot.id].refreshInterval = setInterval(() => {
@@ -226,7 +233,7 @@ module.exports = new class {
 	}
 	
 	robotStateChanged(robot, oldStatus, newStatus) {
-		if(newStatus.state != oldStatus.state && newStatus.state == 1)
+		if(oldStatus == null || newStatus.state != oldStatus.state && newStatus.state == 1)
 		{
 			// Robot is idle
 			// e.g.
@@ -235,6 +242,7 @@ module.exports = new class {
 	}
 	
 	robotDockingChanged(robot, isDocked) {
+		Homey.log('Robot docked', robot, isDocked);
 		if(isDocked)
 		{
 			// Robot has just been docked
@@ -244,7 +252,7 @@ module.exports = new class {
 	}
 	
 	robotStatusUpdate(robot, oldStatus, newStatus) {
-		Homey.log("Robot status changed", robot, oldStatus, newStatus);
+		//Homey.log("Robot status changed", robot, oldStatus, newStatus);
 		
 		if(oldStatus == null || oldStatus.state != newStatus.state || oldStatus.action != newStatus.action)
 		{
@@ -258,11 +266,11 @@ module.exports = new class {
 		
 	}
 	
-	function triggerDevice(eventName, tokens, state, device_data, callback) {
-		console.log('Triggered ' + eventName + ' for ' + device_data.id);
+	triggerDevice(eventName, tokens, state, device_data, callback) {
+		console.log('Triggering flow card \'' + eventName + '\' for robot ' + device_data.id);
 		if(typeof callback !== 'function')
 		{
-			callback = function(err, result){
+			callback = (err, result) => {
 				if( err ) return Homey.error(err);
 			}
 		}
