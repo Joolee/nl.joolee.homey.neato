@@ -36,7 +36,31 @@
 		}, {
 			"id": "add_devices",
 			"template": "add_devices"
-		}]
+		}],
+		"settings": [
+			{
+				"type": "group",
+				"label": {
+					"en": "API settings",
+					"nl": "API-instellingen"
+				},
+				"children": [
+					{
+						"id": "polling_interval",
+						"type": "number",
+						"label": {
+							"en": "Polling interval",
+							"nl": "Polling interval"
+						},
+						"value": 5,
+						"hint": {
+							"en": "Homey will ask the Neato Robotics server every x seconds for status updates.",
+							"nl": "Homey zal elke x seconden de status van je stofzuiger opvragen bij de Neato Robotics server."
+						}
+					}
+				]
+			}
+		]
 	}],
 	"flow": {
 		"actions": [{

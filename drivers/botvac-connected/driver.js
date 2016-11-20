@@ -174,6 +174,7 @@ module.exports = new class {
 		
 		if(this.robots[robot.id])
 		{
+			clearInterval(this.robots[robot.id].refreshInterval);
 			Homey.log('Removing robot', robot);
 			delete this.robots[robot.id];
 		}
@@ -190,9 +191,9 @@ module.exports = new class {
 			
 			// Get robot state on initialise
 			this.robots[robot.id].getState((error, robotStatus) => {
-				Homey.log(robotStatus)
 				if(!error && robotStatus.meta.modelName == 'BotVacConnected')
 				{
+					this.robots[robot.id].oldStatus = robotStatus;
 					module.exports.setAvailable( robot );
 				}
 				else if(error)
@@ -207,8 +208,39 @@ module.exports = new class {
 					this.removeRobot(robot);
 					module.exports.setUnavailable( robot, 'Model ' + robotStatus.meta.modelName + ' is unknown' );
 				}
+				
+				this.robotStateChanged(robot, null, robotStatus);
 			});
 			
+			this.robots[robot.id].refreshInterval = setInterval(() => {
+				Homey.log('Run status refresh for robot');
+
+				this.robots[robot.id].getState((error, robotStatus) => {
+					if(this.robots[robot.id]) {
+						this.robotStatusUpdate(robot, this.robots[robot.id].oldStatus, robotStatus);
+						this.robots[robot.id].oldStatus = robotStatus;
+					}
+				})
+			}, settings.polling_interval * 1000 + Math.floor(Math.random() * 10));
 		});
+	}
+	
+	robotStateChanged(robot, oldStatus, newStatus) {
+		if(newStatus.state != oldStatus.state && newStatus.state == 1)
+		{
+			// Robot is idle
+			// e.g.
+			// triggerDevice( 'state_changed', {state: 'idle'}, null, robot);
+		}
+	}
+	
+	robotStatusUpdate(robot, oldStatus, newStatus) {
+		Homey.log("Robot status changed", robot, oldStatus, newStatus);
+		
+		if(oldStatus == null || oldStatus.state != newStatus.state || oldStatus.action != newStatus.action)
+		{
+			this.robotStateChanged(robot, oldStatus, newStatus);
+		}
+		
 	}
 }
