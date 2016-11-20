@@ -13,7 +13,19 @@ module.exports = class Neato extends events.EventEmitter {
 		  "&scope=control_robots+public_profile&response_type=code&redirect_uri=" + this.config.callback;
 		
 		this.authorized = false;
-		this.isAuthorised();
+		this.init_login();
+	}
+	
+	init_login() {
+		this.isAuthorised()
+			.catch((error) => {
+				if(error == 'ENOTFOUND')
+				{
+					// Try again:
+					Homey.log('Got an ENOTFOUND error when authenticating. Trying again in 5 seconds');
+					setTimeout(this.init_login.bind(this), 5000);
+				}
+			});
 	}
 	
 	// Handle Homey integration to oAuth
@@ -135,7 +147,15 @@ module.exports = class Neato extends events.EventEmitter {
 				Homey.manager('settings').set('user', null);
 				
 				Homey.log("Not authorised: ", message);
-				reject("Not authorised: " + message)
+				
+				if(typeof(message.code) != 'undefined')
+				{
+					reject(message.code)					
+				}
+				else
+				{
+					reject("Not authorised: " + message)					
+				}
 			}
 			
 			var token = Homey.manager('settings').get('accessToken');
