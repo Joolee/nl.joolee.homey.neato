@@ -230,7 +230,16 @@ module.exports = new class {
 		{
 			// Robot is idle
 			// e.g.
-			// triggerDevice( 'state_changed', {state: 'idle'}, null, robot);
+			// this.triggerDevice( 'state_changed', {state: 'idle'}, null, robot);
+		}
+	}
+	
+	robotDockingChanged(robot, isDocked) {
+		if(isDocked)
+		{
+			// Robot has just been docked
+			// e.g.
+			this.triggerDevice( 'docked', null, null, robot);
 		}
 	}
 	
@@ -242,5 +251,22 @@ module.exports = new class {
 			this.robotStateChanged(robot, oldStatus, newStatus);
 		}
 		
+		if(oldStatus == null || oldStatus.details.isDocked != newStatus.details.isDocked)
+		{
+			this.robotDockingChanged(robot, newStatus.details.isDocked);
+		}
+		
+	}
+	
+	function triggerDevice(eventName, tokens, state, device_data, callback) {
+		console.log('Triggered ' + eventName + ' for ' + device_data.id);
+		if(typeof callback !== 'function')
+		{
+			callback = function(err, result){
+				if( err ) return Homey.error(err);
+			}
+		}
+		
+		Homey.manager('flow').triggerDevice(eventName, tokens, state, device_data, callback);
 	}
 }
