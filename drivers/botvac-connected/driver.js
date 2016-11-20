@@ -27,7 +27,7 @@ module.exports = new class {
 	action_start_house_cleaning( callback, args ){
 		Homey.log("Start cleaning", this.robots[args.device.id].name);
 		
-		this.robots[args.device.id].startCleaning((error, result) => {
+		this.robots[args.device.id].startCleaning(args.cleaning_mode == 'true', (error, result) => {
 			Homey.log("Start cleaning: ", error, result)
 			callback( null, error );
 		});

@@ -52,12 +52,12 @@
 				"name": "cleaning_mode",
 				"type": "dropdown",
 				"values": [{
-					"id": "cleaning_mode_turbo",
+					"id": "false",
 					"label": {
 						"en": "Turbo"
 					}
 				}, {
-					"id": "cleaning_mode_eco",
+					"id": "true",
 					"label": {
 						"en": "Eco"
 					}
