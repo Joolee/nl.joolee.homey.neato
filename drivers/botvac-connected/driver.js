@@ -21,8 +21,14 @@ module.exports = new class {
 		neato.on('authorized', (authorized) => {
 			if(authorized)
 			{
-				Homey.log('Now init devices');
-				this.initDevices();
+				if(Object.keys(this.robots).length == 0 && this.devices.length > 0)
+				{
+					this.initDevices();
+				}
+				else
+				{
+					Homey.log('No devices to initialize');
+				}
 			}
 			else
 			{
@@ -153,12 +159,15 @@ module.exports = new class {
 
 	_device_added(robot, callback) {
 		console.log('Added device: ', robot);
+		this.devices.push(robot);
 		this.initRobot(robot);
 	}
 	
 	_device_deleted(robot) {
 		console.log('Removed device: ', robot);
 		this.removeRobot(robot);
+		this.devices.splice(this.devices.indexOf(robot), 1);
+		Homey.log('Devices left:', this.devices);
 	}
 	
 	_device_settings(robot, newSettingsObj, oldSettingsObj, changedKeysArr, callback) {
@@ -169,10 +178,12 @@ module.exports = new class {
 	}
 	
 	initDevices() {
+		Homey.log('Initialize devices');
 		this.devices.forEach(this.initRobot.bind(this));
 	}
 
 	removeDevices() {
+		Homey.log('Remove devices');
 		this.devices.forEach(this.removeRobot.bind(this));
 	}
 	
@@ -202,6 +213,19 @@ module.exports = new class {
 				{
 					this.robots[robot.id].oldStatus = robotStatus;
 					module.exports.setAvailable( robot );
+					
+					this.robots[robot.id].refreshInterval = setInterval(() => {
+						Homey.log('Run status refresh for robot');
+
+						this.robots[robot.id].getState((error, robotStatus) => {
+							if(this.robots[robot.id]) {
+								this.robotStatusUpdate(robot, this.robots[robot.id].oldStatus, robotStatus);
+								this.robots[robot.id].oldStatus = robotStatus;
+							}
+						})
+					}, settings.polling_interval * 1000 + Math.floor(Math.random() * 10));
+					
+					this.robotStatusUpdate(robot, null, robotStatus);
 				}
 				else if(error)
 				{
@@ -216,19 +240,14 @@ module.exports = new class {
 					module.exports.setUnavailable( robot, 'Model ' + robotStatus.meta.modelName + ' is unknown' );
 				}
 				
-				this.robotStatusUpdate(robot, null, robotStatus);
+				// Something failed
+				if(!this.robots[robot.id])
+				{
+					// Retry later
+					setTimeout(this.initRobot.bind(this, robot), settings.polling_interval * 1000);
+				}
+				
 			});
-			
-			this.robots[robot.id].refreshInterval = setInterval(() => {
-				Homey.log('Run status refresh for robot');
-
-				this.robots[robot.id].getState((error, robotStatus) => {
-					if(this.robots[robot.id]) {
-						this.robotStatusUpdate(robot, this.robots[robot.id].oldStatus, robotStatus);
-						this.robots[robot.id].oldStatus = robotStatus;
-					}
-				})
-			}, settings.polling_interval * 1000 + Math.floor(Math.random() * 10));
 		});
 	}
 	
@@ -259,7 +278,7 @@ module.exports = new class {
 			this.robotStateChanged(robot, oldStatus, newStatus);
 		}
 		
-		if(oldStatus == null || oldStatus.details.isDocked != newStatus.details.isDocked)
+		if(oldStatus != null && oldStatus.details.isDocked != newStatus.details.isDocked)
 		{
 			this.robotDockingChanged(robot, newStatus.details.isDocked);
 		}
