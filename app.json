@@ -196,12 +196,91 @@
 				"labelDecimals": 0
 			}]
 		}],
+        "conditions": [
+            {
+                "id": "cleaning",
+                "title": {
+                    "en": "!{{Is cleaning|Is not cleaning}}"
+                },
+                "args": [
+                    {
+                        "name": "device",
+                        "type": "device",
+                        "filter": "driver_id=botvac-connected"
+                    }
+                ]
+            }
+        ],
         "triggers": [
             {
-                "id": "docked",
+                "id": "enters_dock",
                 "title": {
-                    "en": "Is docked",
-                    "nl": "Verbonden met dock"
+                    "en": "Enters dock"
+                },
+                "args": [
+                    {
+                        "name": "device",
+                        "type": "device",
+                        "filter": "driver_id=botvac-connected"
+                    }
+                ]
+			},
+			{
+                "id": "leaves_dock",
+                "title": {
+                    "en": "Leaves dock"
+                },
+                "args": [
+                    {
+                        "name": "device",
+                        "type": "device",
+                        "filter": "driver_id=botvac-connected"
+                    }
+                ]
+			},
+            {
+                "id": "state_stops_cleaning",
+                "title": {
+                    "en": "Stops cleaning"
+                },
+                "args": [
+                    {
+                        "name": "device",
+                        "type": "device",
+                        "filter": "driver_id=botvac-connected"
+                    }
+                ]
+			},
+            {
+                "id": "state_starts_cleaning",
+                "title": {
+                    "en": "Starts cleaning"
+                },
+                "args": [
+                    {
+                        "name": "device",
+                        "type": "device",
+                        "filter": "driver_id=botvac-connected"
+                    }
+                ]
+			},
+            {
+                "id": "state_paused",
+                "title": {
+                    "en": "Pauses cleaning"
+                },
+                "args": [
+                    {
+                        "name": "device",
+                        "type": "device",
+                        "filter": "driver_id=botvac-connected"
+                    }
+                ]
+			},
+            {
+                "id": "state_error",
+                "title": {
+                    "en": "Emits Error"
                 },
                 "args": [
                     {

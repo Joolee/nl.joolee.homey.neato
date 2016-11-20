@@ -40,12 +40,19 @@ module.exports = new class {
 		// Force once for startup :)
 		neato.emit('authorized', neato.isAuthorised(true));
 		
+		// Action flows
 		Homey.manager('flow').on('action.start_house_cleaning', this.action_start_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.stop_house_cleaning', this.action_stop_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.pause_house_cleaning', this.action_pause_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.resume_house_cleaning', this.action_resume_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.send_to_base', this.action_send_to_base.bind(this));
 		Homey.manager('flow').on('action.start_spot_cleaning', this.action_start_spot_cleaning.bind(this));
+		
+		// Start condition flows		
+		Homey.manager('flow').on('condition.cleaning', function( callback, args ){
+		Home.log(newStatus.details.isDocked)
+        	callback( null, (newStatus.details.isDocked));
+    	});
 
 		this.added = this._device_added.bind(this);
 		this.deleted = this._device_deleted.bind(this);
@@ -170,12 +177,12 @@ module.exports = new class {
 		Homey.log('Devices left:', this.devices);
 	}
 	
-	_device_settings(robot, newSettingsObj, oldSettingsObj, changedKeysArr, callback) {
-		// Don't do difficult stuff. Just re-create the robot
-		console.log('Settings changed. Reinitialising device.', changedKeysArr);
-		this.initRobot(robot);
-		callback( null, true );
-	}
+    _device_settings(robot, newSettingsObj, oldSettingsObj, changedKeysArr, callback) {
+        // Don't do difficult stuff. Just re-create the robot
+        console.log('Settings changed. Reinitialising device.', changedKeysArr);
+        callback( null, true );
+        this.initRobot(robot);
+    }
 	
 	initDevices() {
 		Homey.log('Initialize devices');
@@ -215,7 +222,7 @@ module.exports = new class {
 					module.exports.setAvailable( robot );
 					
 					this.robots[robot.id].refreshInterval = setInterval(() => {
-						Homey.log('Run status refresh for robot');
+						Homey.log('Checking status changes of robot ' + '\'' + (this.robots[robot.id].name) + '\'');
 
 						this.robots[robot.id].getState((error, robotStatus) => {
 							if(this.robots[robot.id]) {
@@ -251,23 +258,50 @@ module.exports = new class {
 		});
 	}
 	
+	// Commence Triggers
+	
 	robotStateChanged(robot, oldStatus, newStatus) {
+		Homey.log('Status changed', robot, newStatus);
+	
 		if(oldStatus == null || newStatus.state != oldStatus.state && newStatus.state == 1)
 		{
-			// Robot is idle
-			// e.g.
 			// this.triggerDevice( 'state_changed', {state: 'idle'}, null, robot);
+			this.triggerDevice( 'state_stops_cleaning', null, null, robot);
 		}
+		
+		if(oldStatus == null || newStatus.state != oldStatus.state && newStatus.state == 2)
+		{
+			// this.triggerDevice( 'state_changed', {state: 'idle'}, null, robot);
+			this.triggerDevice( 'state_starts_cleaning', null, null, robot);
+		}
+		
+		if(oldStatus == null || newStatus.state != oldStatus.state && newStatus.state == 3)
+		{
+			// this.triggerDevice( 'state_changed', {state: 'idle'}, null, robot);
+			this.triggerDevice( 'state_paused', null, null, robot);
+		}
+		
+		if(oldStatus == null || newStatus.state != oldStatus.state && newStatus.state == 4)
+		{
+			// this.triggerDevice( 'state_changed', {state: 'idle'}, null, robot);
+			this.triggerDevice( 'state_error', null, null, robot);
+		}
+		
 	}
 	
 	robotDockingChanged(robot, isDocked) {
 		Homey.log('Robot docked', robot, isDocked);
+		
 		if(isDocked)
 		{
-			// Robot has just been docked
-			// e.g.
-			this.triggerDevice( 'docked', null, null, robot);
+			this.triggerDevice( 'enters_dock', null, null, robot);
 		}
+		
+		if(!isDocked)
+		{
+			this.triggerDevice( 'leaves_dock', null, null, robot);
+		}
+		
 	}
 	
 	robotStatusUpdate(robot, oldStatus, newStatus) {
@@ -296,4 +330,5 @@ module.exports = new class {
 		
 		Homey.manager('flow').triggerDevice(eventName, tokens, state, device_data, callback);
 	}
+    
 }
