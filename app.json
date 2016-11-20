@@ -24,7 +24,7 @@
 			"request": "*"
 		},
 		"class": "",
-		"capabilities": [],
+		"capabilities": [ "vacuumcleaner_state", "measure_battery" ],
 		"pair": [{
 			"id": "start"
 		}, {
@@ -60,7 +60,23 @@
 					}
 				]
 			}
-		]
+		],
+		"mobile": {
+            "components": [
+                {
+                    "id": "battery",
+                    "capabilities": [ "measure_battery" ]
+                },
+				{
+					"capabilities": [ ],
+					"id": "icon"
+				},
+				{
+					"capabilities": [ "vacuumcleaner_state"	],
+					"id": "picker"
+				}
+            ]
+        }
 	}],
 	"flow": {
 		"actions": [{
