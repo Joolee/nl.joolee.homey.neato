@@ -48,22 +48,27 @@ module.exports = new class {
 		Homey.manager('flow').on('action.send_to_base', this.action_send_to_base.bind(this));
 		Homey.manager('flow').on('action.start_spot_cleaning', this.action_start_spot_cleaning.bind(this));
 		
-		// Start condition flows		
-		Homey.manager('flow').on('condition.cleaning', function( callback, args ){
-		Home.log(newStatus.details.isDocked)
-        	callback( null, (newStatus.details.isDocked));
-    	});
+		// Condition flows		
+		Homey.manager('flow').on('condition.cleaning', this.condition_cleaning.bind(this));
 
 		this.added = this._device_added.bind(this);
 		this.deleted = this._device_deleted.bind(this);
 		// this.renamed = this._device_renamed.bind(this);
 		this.settings = this._device_settings.bind(this);
-		
 		callback(null, true);
+	}
+	
+	condition_cleaning( callback, args ){
+		Homey.log("Condition card! Current state", '\'' + this.robots[args.device.id].oldStatus.state + '\'');
+		if(this.robots[args.device.id].oldStatus.state == 2)
+		var condition_cleaning = true
+		else 
+		var conditon_cleaning = false
+		callback( null, (condition_cleaning) );
 	}
 
 	action_start_house_cleaning( callback, args ){
-		Homey.log("Start house cleaning", this.robots[args.device.id].name);
+		Homey.log("Action card! Start house cleaning", this.robots[args.device.id].name);
 		
 		this.robots[args.device.id].startCleaning(args.cleaning_mode == 'true', (error, result) => {
 			Homey.log("Start cleaning: ", error, result)
@@ -72,7 +77,7 @@ module.exports = new class {
 	}
 	
 	action_stop_house_cleaning( callback, args ){
-		Homey.log("Stop cleaning", this.robots[args.device.id].name);
+		Homey.log("Action card! Stop cleaning", this.robots[args.device.id].name);
 		
 		this.robots[args.device.id].stopCleaning((error, result) => {
 			Homey.log("Stop cleaning: ", error, result)
@@ -81,7 +86,7 @@ module.exports = new class {
 	}
 	
 	action_pause_house_cleaning( callback, args ){
-		Homey.log("Pause cleaning", this.robots[args.device.id].name);
+		Homey.log("Action card! Pause cleaning", this.robots[args.device.id].name);
 		
 		this.robots[args.device.id].pauseCleaning((error, result) => {
 			Homey.log("Pause stop: ", error, result)
@@ -90,7 +95,7 @@ module.exports = new class {
 	}
 	
 	action_resume_house_cleaning( callback, args ){
-		Homey.log("Resume cleaning", this.robots[args.device.id].name);
+		Homey.log("Action card! Resume cleaning", this.robots[args.device.id].name);
 		
 		this.robots[args.device.id].resumeCleaning((error, result) => {
 			Homey.log("Resume cleaning: ", error, result)
@@ -99,7 +104,7 @@ module.exports = new class {
 	}
 	
 	action_send_to_base( callback, args ){
-		Homey.log("Send to base", this.robots[args.device.id].name);
+		Homey.log("Action card! Send to base", this.robots[args.device.id].name);
 		
 		this.robots[args.device.id].sendToBase((error, result) => {
 			Homey.log("Send to base: ", error, result)
@@ -108,7 +113,7 @@ module.exports = new class {
 	}
 
 	action_start_spot_cleaning( callback, args ){
-		Homey.log("Start spot cleaning", this.robots[args.device.id].name);
+		Homey.log("Action card! Start spot cleaning", this.robots[args.device.id].name);
 		
 		this.robots[args.device.id].startSpotCleaning(args.cleaning_mode == 'true', args.spot_width, args.spot_height, args.cleaning_frequency == 'true', (error, result) => {
 			Homey.log(args);
@@ -261,7 +266,7 @@ module.exports = new class {
 	// Commence Triggers
 	
 	robotStateChanged(robot, oldStatus, newStatus) {
-		Homey.log('Status changed', robot, newStatus);
+		Homey.log('Trigger card! Robot status changed', robot, newStatus);
 	
 		if(oldStatus == null || newStatus.state != oldStatus.state && newStatus.state == 1)
 		{
@@ -290,7 +295,7 @@ module.exports = new class {
 	}
 	
 	robotDockingChanged(robot, isDocked) {
-		Homey.log('Robot docked', robot, isDocked);
+		Homey.log('Trigger card! Dock status changed', robot, isDocked);
 		
 		if(isDocked)
 		{
