@@ -34,13 +34,13 @@ module.exports = new class {
 		// Force once for startup :)
 		neato.emit('authorized', neato.isAuthorised(true));
 		
-
 		Homey.manager('flow').on('action.start_house_cleaning', this.action_start_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.stop_house_cleaning', this.action_stop_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.pause_house_cleaning', this.action_pause_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.resume_house_cleaning', this.action_resume_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.send_to_base', this.action_send_to_base.bind(this));
 		Homey.manager('flow').on('action.start_spot_cleaning', this.action_start_spot_cleaning.bind(this));
+
 		this.added = this._device_added.bind(this);
 		this.deleted = this._device_deleted.bind(this);
 		// this.renamed = this._device_renamed.bind(this);
