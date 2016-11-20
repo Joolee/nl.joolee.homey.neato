@@ -52,12 +52,12 @@
 				"name": "cleaning_mode",
 				"type": "dropdown",
 				"values": [{
-					"id": "cleaning_mode_turbo",
+					"id": "false",
 					"label": {
 						"en": "Turbo"
 					}
 				}, {
-					"id": "cleaning_mode_eco",
+					"id": "true",
 					"label": {
 						"en": "Eco"
 					}
@@ -66,12 +66,12 @@
 				"name": "cleaning_frequency",
 				"type": "dropdown",
 				"values": [{
-					"id": "cleaning_frequency_1",
+					"id": "false",
 					"label": {
 						"en": "1 Pass"
 					}
 				}, {
-					"id": "cleaning_frequency_2",
+					"id": "true",
 					"label": {
 						"en": "2 Pass"
 					}
@@ -130,12 +130,12 @@
 				"name": "cleaning_mode",
 				"type": "dropdown",
 				"values": [{
-					"id": "cleaning_mode_turbo",
+					"id": "false",
 					"label": {
 						"en": "Turbo"
 					}
 				}, {
-					"id": "cleaning_mode_eco",
+					"id": "true",
 					"label": {
 						"en": "Eco"
 					}
@@ -144,12 +144,12 @@
 				"name": "cleaning_frequency",
 				"type": "dropdown",
 				"values": [{
-					"id": "cleaning_frequency_1",
+					"id": "false",
 					"label": {
 						"en": "1 Pass"
 					}
 				}, {
-					"id": "cleaning_frequency_2",
+					"id": "true",
 					"label": {
 						"en": "2 Pass"
 					}

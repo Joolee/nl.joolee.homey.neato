@@ -34,12 +34,13 @@ module.exports = new class {
 		// Force once for startup :)
 		neato.emit('authorized', neato.isAuthorised(true));
 		
+
 		Homey.manager('flow').on('action.start_house_cleaning', this.action_start_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.stop_house_cleaning', this.action_stop_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.pause_house_cleaning', this.action_pause_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.resume_house_cleaning', this.action_resume_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.send_to_base', this.action_send_to_base.bind(this));
-		
+		Homey.manager('flow').on('action.start_spot_cleaning', this.action_start_spot_cleaning.bind(this));
 		this.added = this._device_added.bind(this);
 		this.deleted = this._device_deleted.bind(this);
 		// this.renamed = this._device_renamed.bind(this);
@@ -49,9 +50,9 @@ module.exports = new class {
 	}
 
 	action_start_house_cleaning( callback, args ){
-		Homey.log("Start cleaning", this.robots[args.device.id].name);
+		Homey.log("Start house cleaning", this.robots[args.device.id].name);
 		
-		this.robots[args.device.id].startCleaning((error, result) => {
+		this.robots[args.device.id].startCleaning(args.cleaning_mode == 'true', (error, result) => {
 			Homey.log("Start cleaning: ", error, result)
 			callback( null, error );
 		});
@@ -89,6 +90,16 @@ module.exports = new class {
 		
 		this.robots[args.device.id].sendToBase((error, result) => {
 			Homey.log("Send to base: ", error, result)
+			callback( null, error );
+		});
+	}
+
+	action_start_spot_cleaning( callback, args ){
+		Homey.log("Start spot cleaning", this.robots[args.device.id].name);
+		
+		this.robots[args.device.id].startSpotCleaning(args.cleaning_mode == 'true', args.spot_width, args.spot_height, args.cleaning_frequency == 'true', (error, result) => {
+			Homey.log(args);
+			Homey.log("Start spot cleaning: ", error, result)
 			callback( null, error );
 		});
 	}
