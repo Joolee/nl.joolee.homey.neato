@@ -1,12 +1,9 @@
 'use strict';
-const http = require('http.min');
-const events = require('events');
+var http = require('http.min');
 
-module.exports = class Neato extends events.EventEmitter {
+module.exports = class Neato {
 
 	constructor() {
-		super();
-		
 		Homey.log("Neato API initialised");
 		this.config = Homey.app.config.api;
 		this.oauthurl = "https://" + this.config.oauthHost + "/oauth2/authorize?client_id=" + this.config.id +
@@ -89,8 +86,7 @@ module.exports = class Neato extends events.EventEmitter {
 		Homey.manager('settings').set('authorized', false);
 		Homey.manager('settings').set('user', null);
 		Homey.manager('settings').set('accessToken', null);
-		this.emit('authorized', false);
-		return Promise.resolve(this.authorized);
+		Homey.manager('api').realtime('authorized', false);
 		callback(null, true);
 	}
 	
@@ -122,11 +118,7 @@ module.exports = class Neato extends events.EventEmitter {
 		});
 	}
 	
-	isAuthorised(quick) {
-		if(quick) {
-			return this.authorized;
-		}
-		
+	isAuthorised() {
 		return new Promise((resolve, reject) => {
 			
 			var failed = (message) => {
@@ -138,13 +130,18 @@ module.exports = class Neato extends events.EventEmitter {
 				reject("Not authorised: " + message)
 			}
 			
-			var token = Homey.manager('settings').get('accessToken');
-			if(typeof(token) == 'undefined' || token === null)
+			// This might prove troubling when somebody revokes the token
+			// if(this.authorized)
+			// {
+				// resolve(Homey.manager('settings').get('user'))
+			// }
+			if(typeof(Homey.manager('settings').get('accessToken')) == 'undefined')
 			{
 				failed("No token stored");
 			}
 			else
 			{
+				var token = Homey.manager('settings').get('accessToken');
 				Homey.log('Using token', token);
 				http.get(
 					{
@@ -165,7 +162,6 @@ module.exports = class Neato extends events.EventEmitter {
 							Homey.manager('settings').set('authorized', true);
 							Homey.manager('settings').set('user', response.data);
 							Homey.log("Authorised", response.data);
-							this.emit('authorized', true);
 							resolve(response.data)
 						}
 						else
