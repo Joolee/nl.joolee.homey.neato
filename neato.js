@@ -1,9 +1,12 @@
 'use strict';
-var http = require('http.min');
+const http = require('http.min');
+const events = require('events');
 
-module.exports = class Neato {
+module.exports = class Neato extends events.EventEmitter {
 
 	constructor() {
+		super();
+		
 		Homey.log("Neato API initialised");
 		this.config = Homey.app.config.api;
 		this.oauthurl = "https://" + this.config.oauthHost + "/oauth2/authorize?client_id=" + this.config.id +
@@ -86,7 +89,8 @@ module.exports = class Neato {
 		Homey.manager('settings').set('authorized', false);
 		Homey.manager('settings').set('user', null);
 		Homey.manager('settings').set('accessToken', null);
-		Homey.manager('api').realtime('authorized', false);
+		this.emit('authorized', false);
+		return Promise.resolve(this.authorized);
 		callback(null, true);
 	}
 	
@@ -118,7 +122,11 @@ module.exports = class Neato {
 		});
 	}
 	
-	isAuthorised() {
+	isAuthorised(quick) {
+		if(quick) {
+			return this.authorized;
+		}
+		
 		return new Promise((resolve, reject) => {
 			
 			var failed = (message) => {
@@ -130,18 +138,13 @@ module.exports = class Neato {
 				reject("Not authorised: " + message)
 			}
 			
-			// This might prove troubling when somebody revokes the token
-			// if(this.authorized)
-			// {
-				// resolve(Homey.manager('settings').get('user'))
-			// }
-			if(typeof(Homey.manager('settings').get('accessToken')) == 'undefined')
+			var token = Homey.manager('settings').get('accessToken');
+			if(typeof(token) == 'undefined' || token === null)
 			{
 				failed("No token stored");
 			}
 			else
 			{
-				var token = Homey.manager('settings').get('accessToken');
 				Homey.log('Using token', token);
 				http.get(
 					{
@@ -162,6 +165,7 @@ module.exports = class Neato {
 							Homey.manager('settings').set('authorized', true);
 							Homey.manager('settings').set('user', response.data);
 							Homey.log("Authorised", response.data);
+							this.emit('authorized', true);
 							resolve(response.data)
 						}
 						else
