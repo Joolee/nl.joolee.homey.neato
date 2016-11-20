@@ -34,7 +34,6 @@ module.exports = new class {
 		// Force once for startup :)
 		neato.emit('authorized', neato.isAuthorised(true));
 		
-
 		Homey.manager('flow').on('action.start_house_cleaning', this.action_start_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.stop_house_cleaning', this.action_stop_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.pause_house_cleaning', this.action_pause_house_cleaning.bind(this));
