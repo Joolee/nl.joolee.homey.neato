@@ -378,15 +378,15 @@ module.exports = new class {
 	notifyHomeyOfUpdatedState(robot, newStatus) {
 		this.robots[robot.id].oldStatus = newStatus;
 		this.get_state(robot, (err, state) => {
-        	module.exports.realtime(robot, 'vacuumcleaner_state', state);
-        });
+        		module.exports.realtime(robot, 'vacuumcleaner_state', state);
+       		 });
 	}
 	
 	notifyHomeyOfUpdatedBattery(robot, newStatus) {
 		this.robots[robot.id].oldStatus = newStatus;
-    	this.get_battery(robot, (err, charge) => {
-        	module.exports.realtime(robot, 'measure_battery', charge);
-        });
+    		this.get_battery(robot, (err, charge) => {
+        		module.exports.realtime(robot, 'measure_battery', charge);
+       		 });
 	}
 	
     robotStatusUpdate(robot, oldStatus, newStatus) {
