@@ -42,7 +42,7 @@ module.exports = new class {
 			if(robotData.details.isCharging) {
 				state = 'charging';
 			}		
-			Homey.log('State requested by Homey: ', state);			
+			Homey.log('State sent to Homey: ', state);			
 			callback(null, state);
 		}
 		else
@@ -378,7 +378,7 @@ module.exports = new class {
 	}
 	
     robotStatusUpdate(robot, oldStatus, newStatus) {
-        Homey.log("Robot status changed", robot, oldStatus, newStatus);
+        //Homey.log("Robot status changed", robot, oldStatus, newStatus);
         
         if(oldStatus == null || oldStatus.state != newStatus.state || oldStatus.action != newStatus.action)
         {
