@@ -377,7 +377,7 @@ module.exports = new class {
 	
 	notifyHomeyOfUpdatedState(robot, newStatus) {
 		this.robots[robot.id].oldStatus = newStatus;
-    	this.get_state(robot, (err, state) => {
+		this.get_state(robot, (err, state) => {
         	module.exports.realtime(robot, 'vacuumcleaner_state', state);
         });
 	}
