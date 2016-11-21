@@ -153,7 +153,7 @@ module.exports = new class {
 	initDevices() {
 		if(Object.keys(this.devices).length > 0)
 		{
-			Homey.log('Initialize devices');
+			Homey.log('Initilise devices');
 			this.devices.forEach(this.initRobot.bind(this));
 		}
 		else
@@ -190,7 +190,8 @@ module.exports = new class {
 		this.deInitRobot(robot);
 		
 		module.exports.getSettings( robot, ( err, settings ) => {
-			Homey.log('Initialising robot', robot.id, settings);
+			Homey.log('Initialising robot', settings.name + ', current settings:');
+			Homey.log(settings);
 			
 			this.robots[robot.id] = new Robot(settings.name, settings.serial, settings.secret_key);
 			
@@ -246,7 +247,7 @@ module.exports = new class {
 		// Apperantly, since version 1.0, capability GET functions are only called when the app has just been initialized.
 		// We don't have the robot status at this moment so always return false
 		// The device card is updated later with module.exports.realtime functions
-		Homey.log("Ignoring capability 'get' function. This should only happen when the app or device is just initialized!");
+		Homey.log("Ignoring capability 'get' function. This should only happen when the application or device is just initialised!");
 		callback(null, false);
 	}
 
@@ -315,7 +316,7 @@ module.exports = new class {
 
 	robotStateChanged(robot, cachedStatus, freshStatus) {
 		var parsedState = this._parse_state(freshStatus);
-		Homey.log('Activity status changed to: ' + parsedState + ' for robot ' + robot.id);
+		Homey.log('Activity status changed to: ' + parsedState + ' for robot ' + this.robots[robot.id].name);
 		
 		// Fire corresponding trigger card but not when the app has just initialized
 		if(cachedStatus !== null)
@@ -354,7 +355,7 @@ module.exports = new class {
 
 	
 	robotDockingChanged(robot, cachedStatus, freshStatus) {
-		Homey.log('Dock status changed to: ' + freshStatus.details.isDocked + ' for robot ' + robot.id);
+		Homey.log('Dock status changed to: ' + freshStatus.details.isDocked + ' for robot ' + this.robots[robot.id].name);
 		
 		// Do not fire triggers when the app has just been initialized
 		if(cachedStatus !== null)
@@ -372,7 +373,7 @@ module.exports = new class {
 	}
 	
 	robotChargeChanged(robot, cachedStatus, freshStatus) {
-		Homey.log('Charge status changed to: ' + freshStatus.details.charge + ' for robot ' + robot.id);
+		Homey.log('Charge status changed to: ' + freshStatus.details.charge + ' for robot ' + this.robots[robot.id].name);
 		
 		// Always inform Homey of a charge change, also when the device has just been initialized
 		module.exports.realtime(robot, 'measure_battery', freshStatus.details.charge);
