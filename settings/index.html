@@ -16,10 +16,10 @@
 					<th><span data-i18n="settings.account.name"></span>: </th>
 					<td id="accountname"></td>
 				</tr>
-				<tr>
+				<!--<tr>
 					<th><span data-i18n="settings.account.company"></span>: </th>
 					<td id="accountcompany"></td>
-				</tr>
+				</tr>-->
 			</table>
 
 		<div id="deauthorize-container">
@@ -80,7 +80,7 @@
             deauthorizeContainer.style.display = 'block';
             Homey.get('user', function (err, user) {
                 document.getElementById('accountname').innerHTML = user.first_name + " " + user.last_name;
-                document.getElementById('accountcompany').innerHTML = user.company.length ? user.company : '-';
+                // document.getElementById('accountcompany').innerHTML = user.company.length ? user.company : '-';
             });
         } else {
             deauthorizeContainer.style.display = 'none';
@@ -90,7 +90,7 @@
 </script>
 <style>
 #deauthorize-container {
-	margin-top: 25px;
+	margin-top: 15px;
 }
 
 #deauthorize_notice,
