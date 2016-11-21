@@ -22,7 +22,7 @@ module.exports = new class {
 	
 	_init() {
 		Homey.log("App Initialised");
-		Homey.log(this.config);
+		//Homey.log(this.config);
 		
 		this.neato = new NeatoApi();
 	}
