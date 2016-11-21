@@ -158,14 +158,14 @@ module.exports = new class {
 		}
 		else
 		{
-			Homey.log('No devices to initialize');
+			Homey.log('No devices to initialise');
 		}
 	}
 
 	deInitDevices() {
 		if(Object.keys(this.devices).length > 0 && Object.keys(this.robots).length)
 		{
-			Homey.log('De-initialize all devices');
+			Homey.log('De-initialise all devices');
 			this.devices.forEach(this.deInitRobot.bind(this));
 		}
 		else
@@ -259,16 +259,16 @@ module.exports = new class {
 			if(command == 'cleaning') {
 				this.action_start_house_cleaning(() => {}, {
 					device: robot,
-					cleaning_mode: 'true' // Default to eco mode?
+					cleaning_mode: 'false' // Default to turbo mode
 				});
 			}		
 			else if(command == 'spot_cleaning') {
 				this.action_start_spot_cleaning(() => {}, {
 					device: robot,
-					cleaning_mode: 'true', // Default to eco mode?
-					spot_width: 100, // Default to 100x100?
-					spot_height: 100,
-					cleaning_frequency: 'true' // Default to 2 times?
+					cleaning_mode: 'false', // Default to turbo mode
+					spot_width: 100, // Default to 100
+					spot_height: 100, // Default to 100
+					cleaning_frequency: 'true' // Default to 2 passes
 				});
 			}		
 			else if(command == 'stopped') {
