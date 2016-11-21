@@ -255,15 +255,30 @@ module.exports = new class {
 	set_state(robot, command, callback) {
 		if(typeof(this.robots[robot.id]) != 'undefined' && typeof(this.robots[robot.id].cachedStatus) == 'object')
 		{
+		
+			var previousStatus = this._parse_state(this.robots[robot.id].cachedStatus);
+		
 			Homey.log('Set vacuum state to', command);
 			if(command == 'cleaning') {
-				this.action_start_house_cleaning(() => {}, {
+				this.action_start_house_cleaning((error, result) => {
+				// Homey.log("Robot send house claning result:", error, result)
+					if(result == 'failed') {
+                        Homey.log('Start house cleaning: failed, reverting to previous state!')
+                        module.exports.realtime(robot, 'vacuumcleaner_state', previousStatus);
+                    }
+                }, {
 					device: robot,
 					cleaning_mode: 'false' // Default to turbo mode
 				});
 			}		
 			else if(command == 'spot_cleaning') {
-				this.action_start_spot_cleaning(() => {}, {
+				this.action_start_spot_cleaning((error, result) => {
+				// Homey.log("Robot send spot cleaning result:", error, result)
+					if(result == 'failed') {
+                        Homey.log('tart spot cleaning: failed, reverting to previous state!')
+                        module.exports.realtime(robot, 'vacuumcleaner_state', previousStatus);
+                    }
+                }, {
 					device: robot,
 					cleaning_mode: 'false', // Default to turbo mode
 					spot_width: 100, // Default to 100
@@ -272,12 +287,24 @@ module.exports = new class {
 				});
 			}		
 			else if(command == 'stopped') {
-				this.action_pause_house_cleaning(() => {}, {device: robot});
+				this.action_pause_house_cleaning((error, result) => {
+				// Homey.log("Robot send pause result:", error, result)
+                    if(result == 'failed') {
+                        Homey.log('Pause cleaning: failed, reverting to previous state!')
+                        module.exports.realtime(robot, 'vacuumcleaner_state', previousStatus);
+                    }
+                }, {device: robot});
 			}		
-			else {
-				// 'docked' and 'charging' and simply a safe default :)
-				this.action_send_to_base(() => {}, {device: robot});
-			}
+            else {
+                // 'docked' and 'charging' and simply a safe default :)
+                this.action_send_to_base((error, result) => {
+                // Homey.log("Robot send to base result:", error, result)
+                    if(result == 'failed') {
+                        Homey.log('Send to base: failed, reverting to previous state!')
+                        module.exports.realtime(robot, 'vacuumcleaner_state', previousStatus);
+                    }
+                }, {device: robot});
+            }
 			
 			// Confirm to Homey that we set the command
 			callback(null, command);
@@ -335,11 +362,12 @@ module.exports = new class {
 		var state = 'stopped';
 					
 		// state == busy
+		Homey.log(robotData)
 		if(robotData.state == 2) {
-			if(robotData.action = 1) {
+			if(robotData.action == 1) {
 				state = 'cleaning';
 			}
-			else if(robotData.action = 2) {
+			else if(robotData.action == 2) {
 				state = 'spot_cleaning';
 			}
 		}		
@@ -397,37 +425,37 @@ module.exports = new class {
 
 	action_start_house_cleaning( callback, args ){
 		var robot = this.robots[args.device.id];
-		Homey.log("Start house cleaning", robot.name);
+		Homey.log("Start house cleaning:", robot.name);
 		
 		robot.startCleaning(args.cleaning_mode == 'true', (error, result) => {
-			Homey.log("Start cleaning: ", error, result)
+			Homey.log("Start house cleaning:", error, result)
 			callback( null, error );
 		});
 	}
 	
 	action_stop_house_cleaning( callback, args ){
 		var robot = this.robots[args.device.id];
-		Homey.log("Stop cleaning", robot.name);
+		Homey.log("Stop cleaning:", robot.name);
 		
 		robot.stopCleaning((error, result) => {
-			Homey.log("Robot stopped: ", error, result)
+			Homey.log("Stop cleaning:", error, result)
 			callback( null, error );
 		});
 	}
 	
 	action_pause_house_cleaning( callback, args ){
 		var robot = this.robots[args.device.id];
-		Homey.log("Pause cleaning", robot.name);
+		Homey.log("Pause cleaning:", robot.name);
 		
 		robot.pauseCleaning((error, result) => {
-			Homey.log("Robot paused", error, result)
+			Homey.log("Pause cleaning:", error, result)
 			callback( null, error );
 		});
 	}
 	
 	action_resume_house_cleaning( callback, args ){
 		var robot = this.robots[args.device.id];
-		Homey.log("Resume cleaning", robot.name);
+		Homey.log("Resume cleaning:", robot.name);
 		
 		robot.resumeCleaning((error, result) => {
 			Homey.log("Resume cleaning:", error, result)
@@ -440,17 +468,17 @@ module.exports = new class {
 		Homey.log("Send to base:", robot.name);
 		
 		this.robots[args.device.id].sendToBase((error, result) => {
-			Homey.log("Robot send to base:", error, result)
+			Homey.log("Send to base:", error, result)
 			callback( null, error );
 		});
 	}
 
 	action_start_spot_cleaning( callback, args ){
 		var robot = this.robots[args.device.id];
-		Homey.log("Start spot cleaning", robot.name, args);
+		Homey.log("Start spot cleaning:", robot.name, args);
 		
 		robot.startSpotCleaning(args.cleaning_mode == 'true', args.spot_width, args.spot_height, args.cleaning_frequency == 'true', (error, result) => {
-			Homey.log("Started spot cleaning: ", error, result)
+			Homey.log("Start spot cleaning:", error, result)
 			callback( null, error );
 		});
 	}
