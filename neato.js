@@ -165,7 +165,10 @@ module.exports = class Neato extends events.EventEmitter {
 			}
 			else
 			{
-				Homey.log('Using token', token);
+				if(!this.authorized)
+				{
+					Homey.log('Using token', token);
+				}
 				http.get(
 					{
 						protocol: 'https:',
@@ -181,10 +184,13 @@ module.exports = class Neato extends events.EventEmitter {
 					.then((response) => {
 						if(response.response.statusCode == '200')
 						{
+							if(!this.authorized)
+							{
+								Homey.log("Authorised", response.data);
+							}
 							this.authorized = true;
 							Homey.manager('settings').set('authorized', true);
 							Homey.manager('settings').set('user', response.data);
-							Homey.log("Authorised", response.data);
 							this.emit('authorized', true);
 							resolve(response.data)
 						}

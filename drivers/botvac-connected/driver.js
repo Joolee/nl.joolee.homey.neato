@@ -6,92 +6,34 @@ const neato = Homey.app.neato;
 module.exports = new class {
 
 	constructor() {
+		// Define some internal variables
 		this.devices = {};
 		this.robots = {};
-		this.init = this._init.bind(this);
-		this.pair = this._pair.bind(this);
+		
+		// Map Homey interface functions (functions it expects to be in module.exports.XXX)
+		this.init = 	this._init.bind(this);
+		this.pair = 	this._pair.bind(this);
+		this.added = 	this._device_added.bind(this);
+		this.deleted = 	this._device_deleted.bind(this);
+		// this.renamed = this._device_renamed.bind(this);
+		this.settings = this._device_settings.bind(this);
+
 		this.capabilities = {
 			measure_battery: {
-				get: this.get_battery.bind(this)
+				get: this.ignore_capability_get.bind(this)
 			},
 			vacuumcleaner_state: {
-				get: this.get_state.bind(this),
+				get: this.ignore_capability_get.bind(this),
 				set: this.set_state.bind(this)
 			}
-		}	
-	}
-	
-	get_state(robot, callback) {
-		if(typeof(this.robots[robot.id]) != 'undefined' && typeof(this.robots[robot.id].oldStatus) == 'object')
-		{
-			var robotData = this.robots[robot.id].oldStatus;
-			var state = 'stopped';
-						
-			// state == busy
-			if(robotData.state == 2) {
-				if(robotData.action = 1) {
-					state = 'cleaning';
-				}
-				else if(robotData.action = 2) {
-					state = 'spot_cleaning';
-				}
-			}		
-			if(robotData.details.isDocked) {
-				state = 'docked';
-			}		
-			if(robotData.details.isCharging) {
-				state = 'charging';
-			}		
-			Homey.log('State updated to:', state);			
-			callback(null, state);
-		}
-		else
-		{
-			Homey.log("Vacuum state requested but device not initialized yet");
-			callback(null, false);
 		}
 	}
+		
+	// Interface to Homey functions
 	
-	set_state(robot, command, callback) {
-		if(typeof(this.robots[robot.id]) != 'undefined' && typeof(this.robots[robot.id].oldStatus) == 'object')
-		{
-			Homey.log('Set vacuum state to', command);
-			if(command == 'cleaning') {
-				this.action_start_house_cleaning(callback, {device: robot});
-			}		
-			else if(command == 'spot_cleaning') {
-				this.action_start_spot_cleaning(callback, {device: robot});
-			}		
-			else if(command == 'stopped') {
-				this.action_pause_house_cleaning(callback, {device: robot});
-			}		
-			else {
-				// 'docked' and 'charging' and simply a safe default :)
-				this.action_send_to_base(callback, {device: robot});
-			}			
-		}		
-		else
-		{
-			Homey.log("Vacuum state set but device not initialized yet");
-			callback(null, false);
-		}		
-	}
-	
-	get_battery(robot, callback) {
-		if(typeof(this.robots[robot.id]) != 'undefined' && typeof(this.robots[robot.id].oldStatus) == 'object')
-		{
-			var charge = this.robots[robot.id].oldStatus.details.charge;
-			Homey.log("Battery charge requested", charge);
-			callback(null, charge);
-		}		
-		else
-		{
-			Homey.log("Battery charge requested but device not initialized yet");
-			callback(null, false);
-		}		
-	}
-	
+	// AKA module.exports.init
 	_init(devices, callback) {
+		// Store the list of devices Homey gives us
 		this.devices = devices;
 
 		Homey.log('Devices:', devices);
@@ -100,25 +42,22 @@ module.exports = new class {
 		neato.on('authorized', (authorized) => {
 			if(authorized)
 			{
-				if(Object.keys(this.robots).length == 0 && this.devices.length > 0)
+				if(Object.keys(this.robots).length == 0)
 				{
 					this.initDevices();
 				}
 				else
 				{
-					Homey.log('No devices to initialize');
+					Homey.log('Devices already initialized');
 				}
 			}			
 			else
 			{
-				Homey.log('Now remove devices');
-				this.removeDevices();
+				this.deInitDevices();
 			}			
 		});
 		
-		// Force once for startup :)
-		neato.emit('authorized', neato.isAuthorised(true));
-		
+		// Map flow functions
 		// Action flows
 		Homey.manager('flow').on('action.start_house_cleaning', this.action_start_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.stop_house_cleaning', this.action_stop_house_cleaning.bind(this));
@@ -129,74 +68,12 @@ module.exports = new class {
 		
 		// Condition flows		
 		Homey.manager('flow').on('condition.cleaning', this.condition_cleaning.bind(this));
-
-		this.added = this._device_added.bind(this);
-		this.deleted = this._device_deleted.bind(this);
-		// this.renamed = this._device_renamed.bind(this);
-		this.settings = this._device_settings.bind(this);
+		
+		
 		callback(null, true);
 	}
 	
-	condition_cleaning( callback, args ){
-		Homey.log("Condition card triggered: current state for robot", this.robots[args.device.id].name, 'is', '\'' + this.robots[args.device.id].oldStatus.state + '\'');
-		callback( null, (this.robots[args.device.id].oldStatus.state == 2) );
-	}
-
-	action_start_house_cleaning( callback, args ){
-		Homey.log("Start house cleaning", this.robots[args.device.id].name);
-		
-		this.robots[args.device.id].startCleaning(args.cleaning_mode == 'true', (error, result) => {
-			Homey.log("Start cleaning: ", error, result)
-			callback( null, error );
-		});
-	}
-	
-	action_stop_house_cleaning( callback, args ){
-		Homey.log("Stop cleaning", this.robots[args.device.id].name);
-		
-		this.robots[args.device.id].stopCleaning((error, result) => {
-			Homey.log("Stop cleaning: ", error, result)
-			callback( null, error );
-		});
-	}
-	
-	action_pause_house_cleaning( callback, args ){
-		Homey.log("Pause cleaning", this.robots[args.device.id].name);
-		
-		this.robots[args.device.id].pauseCleaning((error, result) => {
-			Homey.log("Pause stop:", error, result)
-			callback( null, error );
-		});
-	}
-	
-	action_resume_house_cleaning( callback, args ){
-		Homey.log("Resume cleaning", this.robots[args.device.id].name);
-		
-		this.robots[args.device.id].resumeCleaning((error, result) => {
-			Homey.log("Resume cleaning:", error, result)
-			callback( null, error );
-		});
-	}
-	
-	action_send_to_base( callback, args ){
-		Homey.log("Send to base:", this.robots[args.device.id].name);
-		
-		this.robots[args.device.id].sendToBase((error, result) => {
-			Homey.log("Send to base:", error, result)
-			callback( null, error );
-		});
-	}
-
-	action_start_spot_cleaning( callback, args ){
-		Homey.log("Start spot cleaning", this.robots[args.device.id].name);
-		
-		this.robots[args.device.id].startSpotCleaning(args.cleaning_mode == 'true', args.spot_width, args.spot_height, args.cleaning_frequency == 'true', (error, result) => {
-			Homey.log(args);
-			Homey.log("Start spot cleaning: ", error, result)
-			callback( null, error );
-		});
-	}
-	
+	// AKA module.exports.pair
 	_pair(socket) {
 		socket.on('authorized', (data, callback) => {
 			Homey.app.neato.isAuthorised()
@@ -246,19 +123,22 @@ module.exports = new class {
 		});
 	}
 
+	// AKA module.exports.added
 	_device_added(robot, callback) {
 		console.log('Added device: ', robot);
 		this.devices.push(robot);
 		this.initRobot(robot);
 	}
 	
+	// AKA module.exports.deleted
 	_device_deleted(robot) {
 		console.log('Removed device: ', robot);
-		this.removeRobot(robot);
+		this.deInitRobot(robot);
 		this.devices.splice(this.devices.indexOf(robot), 1);
 		Homey.log('Devices left:', this.devices);
 	}
 	
+	// AKA module.exports.settings
     _device_settings(robot, newSettingsObj, oldSettingsObj, changedKeysArr, callback) {
         // Don't do difficult stuff. Just re-create the robot
         console.log('Settings changed. Reinitialising device.', changedKeysArr);
@@ -266,17 +146,35 @@ module.exports = new class {
         this.initRobot(robot);
     }
 	
+	// End Interface to Homey functions /
+	
+	// Robot management functions
+	
 	initDevices() {
-		Homey.log('Initialize devices');
-		this.devices.forEach(this.initRobot.bind(this));
+		if(Object.keys(this.devices).length > 0)
+		{
+			Homey.log('Initialize devices');
+			this.devices.forEach(this.initRobot.bind(this));
+		}
+		else
+		{
+			Homey.log('No devices to initialize');
+		}
 	}
 
-	removeDevices() {
-		Homey.log('Remove devices');
-		this.devices.forEach(this.removeRobot.bind(this));
+	deInitDevices() {
+		if(Object.keys(this.devices).length > 0 && Object.keys(this.robots).length)
+		{
+			Homey.log('De-initialize all devices');
+			this.devices.forEach(this.deInitRobot.bind(this));
+		}
+		else
+		{
+			Homey.log('No devices to de-initialize');
+		}
 	}
 	
-	removeRobot(robot) {
+	deInitRobot(robot) {
 		module.exports.setUnavailable( robot, "Robot not available at the moment" );
 		
 		if(this.robots[robot.id])
@@ -289,7 +187,7 @@ module.exports = new class {
 	
 	initRobot(robot) {
 		// Start clean
-		this.removeRobot(robot);
+		this.deInitRobot(robot);
 		
 		module.exports.getSettings( robot, ( err, settings ) => {
 			Homey.log('Initialising robot', robot.id, settings);
@@ -300,118 +198,268 @@ module.exports = new class {
 			this.robots[robot.id].getState((error, robotStatus) => {
 				if(!error && robotStatus.meta.modelName == 'BotVacConnected')
 				{
-					this.robots[robot.id].oldStatus = robotStatus;
 					module.exports.setAvailable( robot );
 					
-					this.get_battery(robot, (err, charge) => {
-        				module.exports.realtime(robot, 'measure_battery', charge);
-       			    });
-					
-					this.robots[robot.id].refreshInterval = setInterval(() => {
-						Homey.log('Checking state of robot:', this.robots[robot.id].name);
-
-						this.robots[robot.id].getState((error, robotStatus) => {
-							if(this.robots[robot.id]) {
-								this.robotStatusUpdate(robot, this.robots[robot.id].oldStatus, robotStatus);
-								this.robots[robot.id].oldStatus = robotStatus;
-							}
-						})
-					}, settings.polling_interval * 1000 + Math.floor(Math.random() * 10));
+					// Set up polling at regular intervals (randomize within 100ms to prevent all robots to poll at the same time)
+					this.robots[robot.id].refreshInterval = setInterval(this.pollStatus.bind(this, robot), 
+						settings.polling_interval * 1000 + Math.floor(Math.random() * 100));
 					
 					this.robotStatusUpdate(robot, null, robotStatus);
+					this.robots[robot.id].cachedStatus = robotStatus;
 				}
 				
 				else if(error)
 				{
-					Homey.log('Cannot set robot available because', error);
-					this.removeRobot(robot);
+					Homey.log("Encountered an error when fetching the robot's initial status. Retrying in " + settings.polling_interval + " seconds. Error:\n\r", error);
+					this.deInitRobot(robot);
+					// Retry later
+					setTimeout(this.initRobot.bind(this, robot), settings.polling_interval * 1000);
 					module.exports.setUnavailable( robot, error );
 				}
 				
 				else
 				{
 					Homey.log('Cannot set robot available because model is unknown:', robotStatus.meta.modelName);
-					this.removeRobot(robot);
+					this.deInitRobot(robot);
 					module.exports.setUnavailable( robot, 'Model ' + robotStatus.meta.modelName + ' is unknown' );
-				}
-				
-				// Something failed
-				if(!this.robots[robot.id])
-				{
-					// Retry later
-					setTimeout(this.initRobot.bind(this, robot), settings.polling_interval * 1000);
 				}
 				
 			});
 		});
 	}
 	
-	// Commence Triggers
+	pollStatus(robot) {
+		Homey.log('Requesting state of robot:', this.robots[robot.id].name, 'from the Neato server');
+
+		this.robots[robot.id].getState((error, robotStatus) => {
+			if(this.robots[robot.id]) {
+				this.robotStatusUpdate(robot, this.robots[robot.id].cachedStatus, robotStatus);
+				this.robots[robot.id].cachedStatus = robotStatus;
+			}
+		})
+	}
 	
-	robotStateChanged(robot, oldStatus, newStatus) {
-		Homey.log('Robot status changed for robot ' + robot.id + ':\r\n', newStatus);
+	// End robot management functions /
 	
-		if(oldStatus != null && newStatus.state != oldStatus.state)
+	// Device card (capability) functions
+	ignore_capability_get(robot, callback) {
+		// Apperantly, since version 1.0, capability GET functions are only called when the app has just been initialized.
+		// We don't have the robot status at this moment so always return false
+		// The device card is updated later with module.exports.realtime functions
+		Homey.log("Ignoring capability 'get' function. This should only happen when the app or device is just initialized!");
+		callback(null, false);
+	}
+
+	// Somebody changed the 'state' field in the device card 
+	set_state(robot, command, callback) {
+		if(typeof(this.robots[robot.id]) != 'undefined' && typeof(this.robots[robot.id].cachedStatus) == 'object')
+		{
+			Homey.log('Set vacuum state to', command);
+			if(command == 'cleaning') {
+				this.action_start_house_cleaning(() => {}, {
+					device: robot,
+					cleaning_mode: 'true' // Default to eco mode?
+				});
+			}		
+			else if(command == 'spot_cleaning') {
+				this.action_start_spot_cleaning(() => {}, {
+					device: robot,
+					cleaning_mode: 'true', // Default to eco mode?
+					spot_width: 100, // Default to 100x100?
+					spot_height: 100,
+					cleaning_frequency: 'true' // Default to 2 times?
+				});
+			}		
+			else if(command == 'stopped') {
+				this.action_pause_house_cleaning(() => {}, {device: robot});
+			}		
+			else {
+				// 'docked' and 'charging' and simply a safe default :)
+				this.action_send_to_base(() => {}, {device: robot});
+			}
+			
+			// Confirm to Homey that we set the command
+			callback(null, command);
+		}
+		else
+		{
+			Homey.log("Vacuum state set but device not initialized yet");
+			callback(null, false);
+		}
+	}
+	
+	// End device card (capability) functions /
+
+	
+	// Trigger card functions:
+	
+	// This function is run every time the Neato servers have been polled
+    robotStatusUpdate(robot, cachedStatus, freshStatus) {
+        //Homey.log("Robot status changed", robot, cachedStatus, freshStatus);
+
+		if(cachedStatus == null || cachedStatus.state != freshStatus.state)
+		{
+			this.robotStateChanged(robot, cachedStatus, freshStatus);
+		}
+		
+		if(cachedStatus == null || cachedStatus.details.isDocked != freshStatus.details.isDocked)
+		{
+			this.robotDockingChanged(robot, cachedStatus, freshStatus);
+		}
+
+		if(cachedStatus == null || cachedStatus.details.charge != freshStatus.details.charge)
+		{
+			this.robotChargeChanged(robot, cachedStatus, freshStatus);
+		}
+    }
+
+	robotStateChanged(robot, cachedStatus, freshStatus) {
+		var parsedState = this._parse_state(freshStatus);
+		Homey.log('Activity status changed to: ' + parsedState + ' for robot ' + robot.id);
+		
+		// Fire corresponding trigger card but not when the app has just initialized
+		if(cachedStatus !== null)
 		{
 			var stateTriggers = ['state_stops_cleaning', 'state_starts_cleaning', 'state_paused', 'state_error'];
-			this.triggerDevice( stateTriggers[newStatus.state - 1], null, null, robot);
+			this._triggerDevice( stateTriggers[freshStatus.state - 1], null, null, robot);
 		}
 		
+		// Notify Homey for device card update
+		// Also do this when the app has just been initialized
+		module.exports.realtime(robot, 'vacuumcleaner_state', parsedState);
 	}
 	
-	robotDockingChanged(robot, isDocked) {
-		Homey.log('Dock status changed to: ' + isDocked + ' for robot ' + robot.id);
+	// Helper function to convert the Neato status object to something Homey will understand (stopped, cleaning, spot_cleaning, docked or charging)
+	_parse_state(robotData) {
+		var state = 'stopped';
+					
+		// state == busy
+		if(robotData.state == 2) {
+			if(robotData.action = 1) {
+				state = 'cleaning';
+			}
+			else if(robotData.action = 2) {
+				state = 'spot_cleaning';
+			}
+		}		
+		if(robotData.details.isDocked) {
+			state = 'docked';
+		}		
+		if(robotData.details.isCharging) {
+			state = 'charging';
+		}
 		
-		if(isDocked)
+		return state;
+	}
+
+	
+	robotDockingChanged(robot, cachedStatus, freshStatus) {
+		Homey.log('Dock status changed to: ' + freshStatus.details.isDocked + ' for robot ' + robot.id);
+		
+		// Do not fire triggers when the app has just been initialized
+		if(cachedStatus !== null)
 		{
-			this.triggerDevice( 'enters_dock', null, null, robot);
-			
+			if(freshStatus.details.isDocked)
+			{
+				this._triggerDevice( 'enters_dock', null, null, robot);
+				
+			}
+			else
+			{
+				this._triggerDevice( 'leaves_dock', null, null, robot);
+			}
 		}
+	}
+	
+	robotChargeChanged(robot, cachedStatus, freshStatus) {
+		Homey.log('Charge status changed to: ' + freshStatus.details.charge + ' for robot ' + robot.id);
 		
-		if(!isDocked)
-		{
-			this.triggerDevice( 'leaves_dock', null, null, robot);
-		}
+		// Always inform Homey of a charge change, also when the device has just been initialized
+		module.exports.realtime(robot, 'measure_battery', freshStatus.details.charge);
+	}
+	
+	// End trigger card functions /
+	
+	// Condition card function
+	
+	condition_cleaning( callback, args ){
+		var robot = this.robots[args.device.id];
 		
+		Homey.log("Condition card triggered: current state for robot" + robot.name + "is '" + robot.cachedStatus.state + "'");
+		// Return true when state equels 2
+		callback( null, (robot.cachedStatus.state == 2) );
 	}
 	
-	notifyHomeyOfUpdatedState(robot, newStatus) {
-		this.robots[robot.id].oldStatus = newStatus;
-		this.get_state(robot, (err, state) => {
-        		module.exports.realtime(robot, 'vacuumcleaner_state', state);
-       		 });
+	// End condition card function /
+	
+	// Action card functions
+
+	action_start_house_cleaning( callback, args ){
+		var robot = this.robots[args.device.id];
+		Homey.log("Start house cleaning", robot.name);
+		
+		robot.startCleaning(args.cleaning_mode == 'true', (error, result) => {
+			Homey.log("Start cleaning: ", error, result)
+			callback( null, error );
+		});
 	}
 	
-	notifyHomeyOfUpdatedBattery(robot, newStatus) {
-		this.robots[robot.id].oldStatus = newStatus;
-    		this.get_battery(robot, (err, charge) => {
-        		module.exports.realtime(robot, 'measure_battery', charge);
-       		 });
+	action_stop_house_cleaning( callback, args ){
+		var robot = this.robots[args.device.id];
+		Homey.log("Stop cleaning", robot.name);
+		
+		robot.stopCleaning((error, result) => {
+			Homey.log("Robot stopped: ", error, result)
+			callback( null, error );
+		});
 	}
 	
-    robotStatusUpdate(robot, oldStatus, newStatus) {
-        //Homey.log("Robot status changed", robot, oldStatus, newStatus);
-        
-        if(oldStatus == null || oldStatus.state != newStatus.state || oldStatus.action != newStatus.action)
-        {
-            this.robotStateChanged(robot, oldStatus, newStatus);
-            this.notifyHomeyOfUpdatedState(robot, newStatus);
-        }
-        
-        if(oldStatus != null && oldStatus.details.isDocked != newStatus.details.isDocked)
-        {
-            this.robotDockingChanged(robot, newStatus.details.isDocked);
-            this.notifyHomeyOfUpdatedState(robot, newStatus);
-        }
-        
-        if(oldStatus != null && oldStatus.details.charge != newStatus.details.charge)
-        {
-            this.notifyHomeyOfUpdatedBattery(robot, newStatus);
-        }
-    
-    }
+	action_pause_house_cleaning( callback, args ){
+		var robot = this.robots[args.device.id];
+		Homey.log("Pause cleaning", robot.name);
+		
+		robot.pauseCleaning((error, result) => {
+			Homey.log("Robot paused", error, result)
+			callback( null, error );
+		});
+	}
 	
-	triggerDevice(eventName, tokens, state, device_data, callback) {
+	action_resume_house_cleaning( callback, args ){
+		var robot = this.robots[args.device.id];
+		Homey.log("Resume cleaning", robot.name);
+		
+		robot.resumeCleaning((error, result) => {
+			Homey.log("Resume cleaning:", error, result)
+			callback( null, error );
+		});
+	}
+	
+	action_send_to_base( callback, args ){
+		var robot = this.robots[args.device.id];
+		Homey.log("Send to base:", robot.name);
+		
+		this.robots[args.device.id].sendToBase((error, result) => {
+			Homey.log("Robot send to base:", error, result)
+			callback( null, error );
+		});
+	}
+
+	action_start_spot_cleaning( callback, args ){
+		var robot = this.robots[args.device.id];
+		Homey.log("Start spot cleaning", robot.name, args);
+		
+		robot.startSpotCleaning(args.cleaning_mode == 'true', args.spot_width, args.spot_height, args.cleaning_frequency == 'true', (error, result) => {
+			Homey.log("Started spot cleaning: ", error, result)
+			callback( null, error );
+		});
+	}
+	
+	// End action card functions
+	
+	
+	
+	// Helper function to add some debugging information
+	_triggerDevice(eventName, tokens, state, device_data, callback) {
 		console.log('Triggering flow card: \'' + eventName + '\' for robot ' + device_data.id);
 		if(typeof callback !== 'function')
 		{
@@ -421,6 +469,5 @@ module.exports = new class {
 		}
 		
 		Homey.manager('flow').triggerDevice(eventName, tokens, state, device_data, callback);
-	}   
-	
+	}
 }
