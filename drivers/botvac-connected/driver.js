@@ -19,6 +19,7 @@ module.exports = new class {
 				set: this.set_state.bind(this)
 			}
 		}
+		
 	}
 	
 	get_state(robot, callback) {
@@ -40,11 +41,12 @@ module.exports = new class {
 			if(robotData.details.isDocked) {
 				state = 'docked';
 			}
+			
 			if(robotData.details.isCharging) {
 				state = 'charging';
 			}
-			Homey.log('State requested by Homey: ', state);
 			
+			Homey.log('State requested by Homey: ', state);			
 			callback(null, state);
 		}
 		else
@@ -61,22 +63,28 @@ module.exports = new class {
 			if(command == 'cleaning') {
 				this.action_start_house_cleaning(callback, {device: robot});
 			}
+			
 			else if(command == 'spot_cleaning') {
 				this.action_start_spot_cleaning(callback, {device: robot});
 			}
+			
 			else if(command == 'stopped') {
 				this.action_pause_house_cleaning(callback, {device: robot});
 			}
+			
 			else {
 				// 'docked' and 'charging' and simply a safe default :)
 				this.action_send_to_base(callback, {device: robot});
 			}
+			
 		}
+		
 		else
 		{
 			Homey.log("Vacuum state set but device not initialized yet");
 			callback(null, false);
 		}
+		
 	}
 	
 	get_battery(robot, callback) {
@@ -86,11 +94,13 @@ module.exports = new class {
 			Homey.log("Battery charge requested", charge);
 			callback(null, charge);
 		}
+		
 		else
 		{
 			Homey.log("Battery charge requested but device not initialized yet");
 			callback(null, false);
 		}
+		
 	}
 	
 	_init(devices, callback) {
@@ -111,11 +121,13 @@ module.exports = new class {
 					Homey.log('No devices to initialize');
 				}
 			}
+			
 			else
 			{
 				Homey.log('Now remove devices');
 				this.removeDevices();
 			}
+			
 		});
 		
 		// Force once for startup :)
@@ -233,10 +245,12 @@ module.exports = new class {
 							settings: robot
 						});
 					}
+					
 					else
 					{
 						Homey.log('Model is not supported by this driver');
 					}
+					
 				});
 				
 				Homey.log('Found devices: ', foundDevices);
@@ -316,12 +330,14 @@ module.exports = new class {
 					
 					this.robotStatusUpdate(robot, null, robotStatus);
 				}
+				
 				else if(error)
 				{
 					Homey.log('Cannot set robot available because', error);
 					this.removeRobot(robot);
 					module.exports.setUnavailable( robot, error );
 				}
+				
 				else
 				{
 					Homey.log('Cannot set robot available because model is unknown: ', robotStatus.meta.modelName);
