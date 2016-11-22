@@ -53,6 +53,7 @@ module.exports = new class {
 		});
 
 		// Map flow functions
+		
 		// Action flows
 		Homey.manager('flow').on('action.start_house_cleaning', this.action_start_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.stop_house_cleaning', this.action_stop_house_cleaning.bind(this));
@@ -65,7 +66,7 @@ module.exports = new class {
 		Homey.manager('flow').on('condition.cleaning', this.condition_cleaning.bind(this));
 		Homey.manager('flow').on('condition.docked', this.condition_docked.bind(this));
 
-
+		// Ready to rock!
 		callback(null, true);
 	}
 
