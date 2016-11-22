@@ -222,6 +222,18 @@
                         "filter": "driver_id=botvac-connected"
                     }
                 ]
+            }, {
+                "id": "docked",
+                "title": {
+                    "en": "!{{Is docked|Is not docked}}"
+                },
+                "args": [
+                    {
+                        "name": "device",
+                        "type": "device",
+                        "filter": "driver_id=botvac-connected"
+                    }
+                ]
             }
         ],
         "triggers": [
