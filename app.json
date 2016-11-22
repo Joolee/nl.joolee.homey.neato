@@ -272,6 +272,42 @@
                         "filter": "driver_id=botvac-connected"
                     }
                 ]
+            }, {
+                "id": "charging",
+                "title": {
+                    "en": "!{{Is charging|Is not charging}}"
+                },
+                "args": [
+                    {
+                        "name": "device",
+                        "type": "device",
+                        "filter": "driver_id=botvac-connected"
+                    }
+                ]
+            }, {
+                "id": "paused",
+                "title": {
+                    "en": "!{{Is paused|Is not paused}}"
+                },
+                "args": [
+                    {
+                        "name": "device",
+                        "type": "device",
+                        "filter": "driver_id=botvac-connected"
+                    }
+                ]
+        }, {
+                "id": "stopped",
+                "title": {
+                    "en": "!{{Is stopped|Is not stopped}}"
+                },
+                "args": [
+                    {
+                        "name": "device",
+                        "type": "device",
+                        "filter": "driver_id=botvac-connected"
+                    }
+                ]
             }
         ],
         "triggers": [

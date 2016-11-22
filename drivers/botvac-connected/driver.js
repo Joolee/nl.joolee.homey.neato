@@ -65,6 +65,9 @@ module.exports = new class {
 		// Condition flows		
 		Homey.manager('flow').on('condition.cleaning', this.condition_cleaning.bind(this));
 		Homey.manager('flow').on('condition.docked', this.condition_docked.bind(this));
+		Homey.manager('flow').on('condition.charging', this.condition_charging.bind(this));
+		Homey.manager('flow').on('condition.paused', this.condition_paused.bind(this));
+		Homey.manager('flow').on('condition.stopped', this.condition_stopped.bind(this));
 
 		// Ready to rock!
 		callback(null, true);
@@ -433,6 +436,40 @@ module.exports = new class {
 		Homey.log("[Condition flow card] 'is docked': current state for robot " + robot.name + " is '" + robot.cachedStatus.details.isDocked + "'");
 		// Return true when state is docked
 		callback(null, (robot.cachedStatus.details.isDocked));
+	}
+
+	condition_charging(callback, args) {
+		var robot = this.robots[args.device.id];
+
+		Homey.log("[Condition flow card] 'is charging': current state for robot " + robot.name + " is '" + robot.cachedStatus.details.isCharging + "'");
+		// Return true when state is charging
+		callback(null, (robot.cachedStatus.details.isCharging));
+	}
+	
+	condition_paused(callback, args) {
+		var robot = this.robots[args.device.id];
+		
+		if (robot.cachedStatus.state == 3)
+			var paused_boolean = true
+		else
+			var paused_boolean = false
+
+		Homey.log("[Condition flow card] 'is paused': current state for robot " + robot.name + " is '" + paused_boolean + "'");
+		// Return true when state is charging
+		callback(null, (robot.cachedStatus.state == 3));
+	}
+	
+	condition_stopped(callback, args) {
+		var robot = this.robots[args.device.id];
+		
+		if (robot.cachedStatus.state == 1)
+			var stopped_boolean = true
+		else
+			var stopped_boolean = false
+
+		Homey.log("[Condition flow card] 'is stopped': current state for robot " + robot.name + " is '" + stopped_boolean + "'");
+		// Return true when state is charging
+		callback(null, (robot.cachedStatus.state == 1));
 	}
 
 	// End condition card function /
