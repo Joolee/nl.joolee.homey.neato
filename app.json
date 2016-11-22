@@ -38,6 +38,44 @@
 			{
 				"type": "group",
 				"label": {
+					"en": "Robot information"
+				},
+				"children": [
+					{
+						"id": "name",
+						"type": "label",
+						"label": {
+							"en": "Name"
+						},
+						"value": "N/A",
+						"hint": {
+							"en": "The name of your robot vacuum as reported by the Neato API. You can change this via the Neato website or mobile app if required (we're currently unable to do this via the API)."
+						}
+					}, {
+						"id": "model",
+						"type": "label",
+						"label": {
+							"en": "Model"
+						},
+						"value": "N/A",
+						"hint": {
+							"en": "The model of your robot vacuum."
+						}
+					}, {
+						"id": "serial",
+						"type": "label",
+						"label": {
+							"en": "Serial"
+						},
+						"value": "N/A",
+						"hint": {
+							"en": "The serial number of your robot vacuum."
+						}
+					}
+				]
+			}, {
+				"type": "group",
+				"label": {
 					"en": "API settings",
 					"nl": "API-instellingen"
 				},
