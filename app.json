@@ -153,9 +153,9 @@
 				}]
 			}]
 		}, {
-			"id": "stop_house_cleaning",
+			"id": "stop_cleaning",
 			"title": {
-				"en": "Stop house cleaning"
+				"en": "Stop cleaning"
 			},
 			"args": [{
 				"name": "device",
@@ -163,9 +163,9 @@
 				"filter": "driver_id=botvac-connected"
 			}]
 		}, {
-			"id": "pause_house_cleaning",
+			"id": "pause_cleaning",
 			"title": {
-				"en": "Pause house cleaning"
+				"en": "Pause cleaning"
 			},
 			"args": [{
 				"name": "device",
@@ -173,9 +173,9 @@
 				"filter": "driver_id=botvac-connected"
 			}]
 		}, {
-			"id": "resume_house_cleaning",
+			"id": "resume_cleaning",
 			"title": {
-				"en": "Resume house cleaning"
+				"en": "Resume cleaning"
 			},
 			"args": [{
 				"name": "device",

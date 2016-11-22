@@ -56,9 +56,9 @@ module.exports = new class {
 		
 		// Action flows
 		Homey.manager('flow').on('action.start_house_cleaning', this.action_start_house_cleaning.bind(this));
-		Homey.manager('flow').on('action.stop_house_cleaning', this.action_stop_house_cleaning.bind(this));
-		Homey.manager('flow').on('action.pause_house_cleaning', this.action_pause_house_cleaning.bind(this));
-		Homey.manager('flow').on('action.resume_house_cleaning', this.action_resume_house_cleaning.bind(this));
+		Homey.manager('flow').on('action.stop_cleaning', this.action_stop_cleaning.bind(this));
+		Homey.manager('flow').on('action.pause_cleaning', this.action_pause_cleaning.bind(this));
+		Homey.manager('flow').on('action.resume_cleaning', this.action_resume_cleaning.bind(this));
 		Homey.manager('flow').on('action.send_to_base', this.action_send_to_base.bind(this));
 		Homey.manager('flow').on('action.start_spot_cleaning', this.action_start_spot_cleaning.bind(this));
 
@@ -272,7 +272,7 @@ module.exports = new class {
 						cleaning_frequency: 'true' // Default to 2 passes
 					});
 				} else if (command == 'stopped') {
-					this.action_pause_house_cleaning((error, result) => {
+					this.action_pause_cleaning((error, result) => {
 						// Homey.log("Robot send pause result:", error, result)
 						if (error) {
 							Homey.log('[Error] (Picker) Pause cleaning: failed, reverting to previous state!')
@@ -492,7 +492,7 @@ module.exports = new class {
 		});
 	}
 
-	action_stop_house_cleaning(callback, args) {
+	action_stop_cleaning(callback, args) {
 		var robot = this.robots[args.device.id];
 		Homey.log("[Info] Attempting to stop cleaning:", robot.name);
 
@@ -508,7 +508,7 @@ module.exports = new class {
 		});
 	}
 
-	action_pause_house_cleaning(callback, args) {
+	action_pause_cleaning(callback, args) {
 		var robot = this.robots[args.device.id];
 		Homey.log("[Info] Attempting to pause cleaning:", robot.name);
 
@@ -524,7 +524,7 @@ module.exports = new class {
 		});
 	}
 
-	action_resume_house_cleaning(callback, args) {
+	action_resume_cleaning(callback, args) {
 		var robot = this.robots[args.device.id];
 		Homey.log("[Info] Attempting to resume cleaning:", robot.name);
 
