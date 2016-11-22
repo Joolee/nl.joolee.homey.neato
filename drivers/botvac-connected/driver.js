@@ -245,7 +245,7 @@ module.exports = new class {
 				if (command == 'cleaning') {
 					this.action_start_house_cleaning((error, result) => {
 						// Homey.log("Robot send house claning result:", error, result)
-						if (result == 'failed') {
+						if (error) {
 							Homey.log('[Error] (Picker) Start house cleaning: failed, reverting to previous state!')
 							module.exports.realtime(robot, 'vacuumcleaner_state', previousStatus);
 						}
@@ -256,7 +256,7 @@ module.exports = new class {
 				} else if (command == 'spot_cleaning') {
 					this.action_start_spot_cleaning((error, result) => {
 						// Homey.log("Robot send spot cleaning result:", error, result)
-						if (result == 'failed') {
+						if (error) {
 							Homey.log('[Error] (Picker) Start spot cleaning: failed, reverting to previous state!')
 							module.exports.realtime(robot, 'vacuumcleaner_state', previousStatus);
 						}
@@ -270,7 +270,7 @@ module.exports = new class {
 				} else if (command == 'stopped') {
 					this.action_pause_house_cleaning((error, result) => {
 						// Homey.log("Robot send pause result:", error, result)
-						if (result == 'failed') {
+						if (error) {
 							Homey.log('[Error] (Picker) Pause cleaning: failed, reverting to previous state!')
 							module.exports.realtime(robot, 'vacuumcleaner_state', previousStatus);
 						}
@@ -282,7 +282,7 @@ module.exports = new class {
 
 					this.action_send_to_base((error, result) => {
 						// Homey.log("Robot send to base result:", error, result)
-						if (result == 'failed') {
+						if (error) {
 							Homey.log('[Error] (Picker) Send to base: failed, reverting to previous state!')
 							module.exports.realtime(robot, 'vacuumcleaner_state', previousStatus);
 						}
@@ -450,7 +450,7 @@ module.exports = new class {
 			else {
 				Homey.log("[Success] Attempting to start house cleaning:", result)
 			}
-			callback(null, error);
+			callback(error, result)
 		});
 	}
 
@@ -466,7 +466,7 @@ module.exports = new class {
 			else {
 				Homey.log("[Success] Attempting to stop cleaning:", result)
 			}
-			callback(null, error);
+			callback(error, result)
 		});
 	}
 
@@ -482,7 +482,7 @@ module.exports = new class {
 			else {
 				Homey.log("[Success] Attempting to pause cleaning:", result)
 			}
-			callback(null, error);
+			callback(error, result)
 		});
 	}
 
@@ -498,7 +498,7 @@ module.exports = new class {
 			else {
 				Homey.log("[Success] Attempting to resume cleaning:", result)
 			}
-			callback(null, error);
+			callback(error, result)
 		});
 	}
 
@@ -514,7 +514,7 @@ module.exports = new class {
 			else {
 				Homey.log("[Success] Send to base:", result)
 			}
-			callback(null, error);
+			callback(error, result)
 		});
 	}
 
@@ -530,7 +530,7 @@ module.exports = new class {
 			else {
 				Homey.log("[Success] Attempting to start spot cleaning:", result)
 			}
-			callback(null, error);
+			callback(error, result)
 		});
 	}
 
