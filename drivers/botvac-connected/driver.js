@@ -317,17 +317,17 @@ module.exports = new class {
 		// Homey.log("Fresh status:");
 		// Homey.log(freshStatus);
 
-		// Run on state change of / state / charging / docked
+		// Run on state change of / state / charging / docked (to update device card and run state triggers)
 		if (cachedStatus == null || cachedStatus.state != freshStatus.state || cachedStatus.details.isCharging != freshStatus.details.isCharging || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
 			this.robotStateChanged(robot, cachedStatus, freshStatus);
 		}
 
-		// Run on change of docked
+		// Run on change of docked (Run triggers)
 		if (cachedStatus == null || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
 			this.robotDockedChanged(robot, cachedStatus, freshStatus);
 		}
 
-		// Run on change of battery level
+		// Run on change of battery level (Update device card)
 		if (cachedStatus == null || cachedStatus.details.charge != freshStatus.details.charge) {
 			this.robotBatteryLevelChanged(robot, cachedStatus, freshStatus);
 		}
@@ -369,7 +369,7 @@ module.exports = new class {
 
 	robotStateChanged(robot, cachedStatus, freshStatus) {
 		var parsedState = this._parse_state(freshStatus);
-		Homey.log('[Info] State status changed to: ' + parsedState + ' for robot ' + this.robots[robot.id].name);
+		Homey.log('[Info] Robot state changed to: ' + parsedState + ' for robot ' + this.robots[robot.id].name);
 
 		// Fire corresponding trigger card but not when the app has just initialised
 		if (cachedStatus !== null) {
