@@ -249,9 +249,9 @@
 		}],
         "conditions": [
             {
-                "id": "cleaning",
+                "id": "busy",
                 "title": {
-                    "en": "!{{Is cleaning|Is not cleaning}}"
+                    "en": "!{{Is busy|Is not busy}}"
                 },
                 "args": [
                     {

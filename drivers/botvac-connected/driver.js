@@ -63,7 +63,7 @@ module.exports = new class {
 		Homey.manager('flow').on('action.start_spot_cleaning', this.action_start_spot_cleaning.bind(this));
 
 		// Condition flows		
-		Homey.manager('flow').on('condition.cleaning', this.condition_cleaning.bind(this));
+		Homey.manager('flow').on('condition.busy', this.condition_busy.bind(this));
 		Homey.manager('flow').on('condition.docked', this.condition_docked.bind(this));
 		Homey.manager('flow').on('condition.charging', this.condition_charging.bind(this));
 		Homey.manager('flow').on('condition.paused', this.condition_paused.bind(this));
@@ -317,17 +317,22 @@ module.exports = new class {
 		// Homey.log("Fresh status:");
 		// Homey.log(freshStatus);
 
-		// Run on state change of / state / charging / docked (to update device card and run state triggers)
+		// Run on state change of state: stopped / cleaning / spot cleaning / docked / charging (to update device card and run state trigger cards)
 		if (cachedStatus == null || cachedStatus.state != freshStatus.state || cachedStatus.details.isCharging != freshStatus.details.isCharging || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
-			this.robotStateChanged(robot, cachedStatus, freshStatus);
+			this.robotUpdateDeviceCard(robot, cachedStatus, freshStatus);
 		}
 
-		// Run on change of docked (Run triggers)
+		// Run on change of docked status (run trigger cards)
+		if (cachedStatus == null || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
+			this.robotDockedChanged(robot, cachedStatus, freshStatus);
+		}
+		
+		// Run on change of charge status (run trigger cards)
 		if (cachedStatus == null || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
 			this.robotDockedChanged(robot, cachedStatus, freshStatus);
 		}
 
-		// Run on change of battery level (Update device card)
+		// Run on change of battery level (update device card)
 		if (cachedStatus == null || cachedStatus.details.charge != freshStatus.details.charge) {
 			this.robotBatteryLevelChanged(robot, cachedStatus, freshStatus);
 		}
@@ -336,40 +341,40 @@ module.exports = new class {
 	// Helper function to convert the Neato status object to something Homey will understand (stopped, cleaning, spot_cleaning, docked or charging)
 	_parse_state(robotData) {
 	
-		Homey.log('[Info] State helper function running...');
+		Homey.log('[Info] Robot state helper function running...');
 		Homey.log('[Info] Analysing new robot data:');
 		Homey.log(robotData);
 		
-		// default state == stopped
+		// device card default state == stopped
 		var state = 'stopped';
 
-		// state == busy
 		if (robotData.state == 2) {
+			// device card state == cleaning
 			if (robotData.action == 1) {
 				state = 'cleaning';
-				Homey.log('[Info] State helper function: Detected house cleaning')
+			// device card state == spot cleaning
 			} else if (robotData.action == 2) {
 				state = 'spot_cleaning';
-				Homey.log('[Info] State helper function: Detected spot cleaning')
 			}
 		}
 		
+		// device card state == docked
 		if (robotData.details.isDocked) {
 			state = 'docked';
-			Homey.log('[Info] State helper function: Detected docked')
 		}
 		
+		// device card state == charging
 		if (robotData.details.isCharging) {
 			state = 'charging';
-			Homey.log('[Info] State helper function: Detected charging')
 		}
 
+		Homey.log('[Info] Robot state helper function detected state: ' + state)
 		return state;
 	}
 
-	robotStateChanged(robot, cachedStatus, freshStatus) {
+	robotUpdateDeviceCard(robot, cachedStatus, freshStatus) {
 		var parsedState = this._parse_state(freshStatus);
-		Homey.log('[Info] Robot state changed to: ' + parsedState + ' for robot ' + this.robots[robot.id].name);
+		Homey.log('[Info] Robot state status changed to: ' + parsedState + ' for robot ' + this.robots[robot.id].name);
 
 		// Fire corresponding trigger card but not when the app has just initialised
 		if (cachedStatus !== null) {
@@ -384,7 +389,7 @@ module.exports = new class {
 
 	robotDockedChanged(robot, cachedStatus, freshStatus) {
 		var parsedState = this._parse_state(freshStatus);
-		Homey.log('[Info] Docking changed to: ' + freshStatus.details.isDocked + ' for robot ' + this.robots[robot.id].name);
+		Homey.log('[Info] Docking status changed to: ' + freshStatus.details.isDocked + ' for robot ' + this.robots[robot.id].name);
 
 		// Do not fire triggers when the app has just been initialised
 		if (cachedStatus !== null) {
@@ -409,15 +414,15 @@ module.exports = new class {
 
 	// Condition card function
 
-	condition_cleaning(callback, args) {
+	condition_busy(callback, args) {
 		var robot = this.robots[args.device.id];
 
 		if (robot.cachedStatus.state == 2)
-			var cleaning_boolean = true
+			var busy_boolean = true
 		else
-			var cleaning_boolean = false
+			var busy_boolean = false
 
-		Homey.log("[Condition flow card] 'is cleaning': current state for robot " + robot.name + " is '" + cleaning_boolean + "'");
+		Homey.log("[Condition flow card] 'is busy': current state for robot " + robot.name + " is '" + busy_boolean + "'");
 		// Return true when state equals 2
 		callback(null, (robot.cachedStatus.state == 2));
 	}
