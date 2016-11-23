@@ -15,13 +15,13 @@ module.exports = new class {
 		// Get from secure environment
 		this.config.api.id = Homey.env.CLIENT_ID;
 		this.config.api.secret = Homey.env.CLIENT_SECRET;
-		Homey.log("App constructed");
+		Homey.log("Application secure data loaded");
 		
 		this.init = this._init.bind(this);
 	}
 	
 	_init() {
-		Homey.log("App Initialised");
+		Homey.log("Application initialised");
 		//Homey.log(this.config);
 		
 		this.neato = new NeatoApi();

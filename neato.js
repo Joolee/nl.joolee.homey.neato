@@ -186,7 +186,8 @@ module.exports = class Neato extends events.EventEmitter {
 						{
 							if(!this.authorized)
 							{
-								Homey.log("Authorised", response.data);
+								Homey.log("Authorised, current user:");
+								Homey.log(response.data);
 							}
 							this.authorized = true;
 							Homey.manager('settings').set('authorized', true);
