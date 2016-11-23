@@ -226,7 +226,7 @@ module.exports = new class {
 
 	// Device card (capability) functions
 	ignore_capability_get(robot, callback) {
-		// Apperantly, since version 1.0, capability GET functions are only called when the app has just been initialised.
+		// Apparently, since version 1.0, capability GET functions are only called when the app has just been initialised.
 		// We don't have the robot status at this moment so always return false
 		// The device card is updated later with module.exports.realtime functions
 		Homey.log("[Info] Ignoring capability 'get' function. This should only happen when the application or device is just initialised!");
@@ -326,7 +326,7 @@ module.exports = new class {
 		}
 
 		if (cachedStatus == null || cachedStatus.details.isCharging != freshStatus.details.isCharging) {
-			this.robotChargingChanged(robot, cachedStatus, freshStatus);
+			this.robotStateChanged(robot, cachedStatus, freshStatus);
 		}
 
 		if (cachedStatus == null || cachedStatus.details.charge != freshStatus.details.charge) {
@@ -391,15 +391,6 @@ module.exports = new class {
 				this._triggerDevice('leaves_dock', null, null, robot);
 			}
 		}
-
-		// Notify Homey for device card update
-		// Also do this when the app has just been initialised
-		module.exports.realtime(robot, 'vacuumcleaner_state', parsedState);
-	}
-
-	robotChargingChanged(robot, cachedStatus, freshStatus) {
-		var parsedState = this._parse_state(freshStatus);
-		Homey.log('[Info] Charging status changed to: ' + freshStatus.details.isCharging + ' for robot ' + this.robots[robot.id].name);
 
 		// Notify Homey for device card update
 		// Also do this when the app has just been initialised
