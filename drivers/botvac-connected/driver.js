@@ -317,18 +317,17 @@ module.exports = new class {
 		// Homey.log("Fresh status:");
 		// Homey.log(freshStatus);
 
-		if (cachedStatus == null || cachedStatus.state != freshStatus.state) {
+		// Run on state change of / state / charging / docked
+		if (cachedStatus == null || cachedStatus.state != freshStatus.state || cachedStatus.details.isCharging != freshStatus.details.isCharging || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
 			this.robotStateChanged(robot, cachedStatus, freshStatus);
 		}
 
+		// Run on change of docked
 		if (cachedStatus == null || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
 			this.robotDockedChanged(robot, cachedStatus, freshStatus);
 		}
 
-		if (cachedStatus == null || cachedStatus.details.isCharging != freshStatus.details.isCharging) {
-			this.robotStateChanged(robot, cachedStatus, freshStatus);
-		}
-
+		// Run on change of battery level
 		if (cachedStatus == null || cachedStatus.details.charge != freshStatus.details.charge) {
 			this.robotBatteryLevelChanged(robot, cachedStatus, freshStatus);
 		}
@@ -569,7 +568,7 @@ module.exports = new class {
 
 
 
-	// Helper function to add some debugging information
+	// Trigger card helper function to add some debug information
 	_triggerDevice(eventName, tokens, state, device_data, callback) {
 		console.log('[Trigger Flow card] \'' + eventName + '\' for robot ' + device_data.id);
 		if (typeof callback !== 'function') {
