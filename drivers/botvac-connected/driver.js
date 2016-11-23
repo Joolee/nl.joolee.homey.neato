@@ -322,7 +322,7 @@ module.exports = new class {
 		}
 
 		if (cachedStatus == null || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
-			this.robotDockingChanged(robot, cachedStatus, freshStatus);
+			this.robotDockedChanged(robot, cachedStatus, freshStatus);
 		}
 
 		if (cachedStatus == null || cachedStatus.details.isCharging != freshStatus.details.isCharging) {
@@ -330,18 +330,21 @@ module.exports = new class {
 		}
 
 		if (cachedStatus == null || cachedStatus.details.charge != freshStatus.details.charge) {
-			this.robotChargeChanged(robot, cachedStatus, freshStatus);
+			this.robotBatteryLevelChanged(robot, cachedStatus, freshStatus);
 		}
 	}
 
 	// Helper function to convert the Neato status object to something Homey will understand (stopped, cleaning, spot_cleaning, docked or charging)
 	_parse_state(robotData) {
-		var state = 'stopped';
+	
 		Homey.log('[Info] State helper function running...');
+		Homey.log('[Info] Analysing new robot data:');
+		Homey.log(robotData);
+		
+		// default state == stopped
+		var state = 'stopped';
 
 		// state == busy
-		Homey.log('[Info] Analysing data:');
-		Homey.log(robotData);
 		if (robotData.state == 2) {
 			if (robotData.action == 1) {
 				state = 'cleaning';
@@ -351,10 +354,12 @@ module.exports = new class {
 				Homey.log('[Info] State helper function: Detected spot cleaning')
 			}
 		}
+		
 		if (robotData.details.isDocked) {
 			state = 'docked';
-			Homey.log('[Info] State helper function: Detected docking')
+			Homey.log('[Info] State helper function: Detected docked')
 		}
+		
 		if (robotData.details.isCharging) {
 			state = 'charging';
 			Homey.log('[Info] State helper function: Detected charging')
@@ -378,9 +383,9 @@ module.exports = new class {
 		module.exports.realtime(robot, 'vacuumcleaner_state', parsedState);
 	}
 
-	robotDockingChanged(robot, cachedStatus, freshStatus) {
+	robotDockedChanged(robot, cachedStatus, freshStatus) {
 		var parsedState = this._parse_state(freshStatus);
-		Homey.log('[Info] Dock status changed to: ' + freshStatus.details.isDocked + ' for robot ' + this.robots[robot.id].name);
+		Homey.log('[Info] Docking changed to: ' + freshStatus.details.isDocked + ' for robot ' + this.robots[robot.id].name);
 
 		// Do not fire triggers when the app has just been initialised
 		if (cachedStatus !== null) {
@@ -392,12 +397,9 @@ module.exports = new class {
 			}
 		}
 
-		// Notify Homey for device card update
-		// Also do this when the app has just been initialised
-		module.exports.realtime(robot, 'vacuumcleaner_state', parsedState);
 	}
 
-	robotChargeChanged(robot, cachedStatus, freshStatus) {
+	robotBatteryLevelChanged(robot, cachedStatus, freshStatus) {
 		Homey.log('[Info] Charge status changed to: ' + freshStatus.details.charge + ' for robot ' + this.robots[robot.id].name);
 
 		// Always inform Homey of a charge change, also when the device has just been initialised
