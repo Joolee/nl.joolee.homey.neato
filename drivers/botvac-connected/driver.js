@@ -160,7 +160,7 @@ module.exports = new class {
 			Homey.log('[Info] De-initialise all devices');
 			this.devices.forEach(this.deInitRobot.bind(this));
 		} else {
-			Homey.log('[Error] No devices to de-initialize');
+			Homey.log('[Error] No devices to de-initialise');
 		}
 	}
 
@@ -169,7 +169,7 @@ module.exports = new class {
 
 		if (this.robots[robot.id]) {
 			clearInterval(this.robots[robot.id].refreshInterval);
-			Homey.log('[Info] Removing robot', robot);
+			Homey.log('[Info] Removing robot:', robot);
 			delete this.robots[robot.id];
 		}
 	}
