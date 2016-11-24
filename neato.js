@@ -2,7 +2,7 @@
 const http = require('http.min');
 const events = require('events');
 
-module.exports = class Neato extends events.EventEmitter {
+module.exports = class BotvacConnected extends events.EventEmitter {
 
 	constructor() {
 		super();

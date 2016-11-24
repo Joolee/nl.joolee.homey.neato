@@ -290,8 +290,8 @@ function doAction(robot, command, params, callback) {
         var data = [robot._serial.toLowerCase(), date, payload].join("\n");
         var hmac = crypto.createHmac('sha256', robot._secret).update(data).digest('hex');
 
-		var failed = (message) => {
-			Homey.log("Error performing API call", command, message);
+		var failed = (message, data) => {
+			Homey.log("Error performing API call", command, message.stack);
 			if (typeof callback === 'function') {
 				callback(true, "Error: " + message);
 			}
