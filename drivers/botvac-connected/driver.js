@@ -2,7 +2,7 @@
 
 const Robot = require('./robot');
 const Flows = require('./flows');
-const Capabilities = require('./capabilities');
+const Devicecard = require('./devicecard');
 const neato = Homey.app.neato;
 
 module.exports = new class {
@@ -19,8 +19,10 @@ module.exports = new class {
 		this.deleted = this._device_deleted.bind(this);
 		// this.renamed = this._device_renamed.bind(this);
 		this.settings = this._device_settings.bind(this);
-
-		this.capabilities = new Capabilities(this).getHomeyObject();
+		
+		// Set up device card
+		this.deviceCard = new Devicecard(this);
+		this.capabilities = this.deviceCard.getCapabilities();
 	}
 
 	// Interface to Homey functions
@@ -33,23 +35,25 @@ module.exports = new class {
 		Homey.log('Devices:', devices);
 
 		// Do authorisation stuff when needed
-		neato.on('authorized', (authorized) => {
-			if (authorized) {
-				if (Object.keys(this.robots).length == 0) {
-					this.initDevices();
-				} else {
-					Homey.log('Devices already initialised');
-				}
-			} else {
-				this.deInitDevices();
-			}
-		});
+		neato.on('authorized', this._authorized.bind(this));
 
 		// Initialize flow logic
 		this.flows = new Flows(this);
 
 		// Ready to rock!
 		callback(null, true);
+	}
+	
+	_authorized(authorized) {
+		if (authorized) {
+			if (Object.keys(this.robots).length == 0) {
+				this.initDevices();
+			} else {
+				Homey.log('Devices already initialised');
+			}
+		} else {
+			this.deInitDevices();
+		}
 	}
 
 	// AKA module.exports.pair
@@ -170,9 +174,10 @@ module.exports = new class {
 					module.exports.setAvailable(device);
 
 					// Set up polling at regular intervals (randomize within 100ms to prevent all robots to poll at the same time)
-					robot.refreshInterval = setInterval(this.pollStatus.bind(this, device),
-						settings.polling_interval * 1000 + Math.floor(Math.random() * 100));
-
+					var interval = settings.polling_interval * 1000 + Math.floor(Math.random() * 100);
+					var callback = this.pollSuccess.bind(this, device);
+					robot.refreshInterval = setInterval(this.pollStatus.bind(this, device, callback), interval);
+					
 					this.robotStatusUpdate(device, null, robotStatus);
 					robot.cachedStatus = robotStatus;
 				} else if (error) {
@@ -191,21 +196,21 @@ module.exports = new class {
 		});
 	}
 
-	pollStatus(device) {
+	pollStatus(device, callback) {
 		var robot = this.getRobot(device);
 		Homey.log('[Polling] Neato server for updates for robot: ' + robot.name);
 		
-		robot.getState((error, robotStatus) => {
-			if (robot) {
-				this.robotStatusUpdate(device, robot.cachedStatus, robotStatus);
-				robot.cachedStatus = robotStatus;
-			}
-		})
+		robot.getState(callback);
 	}
-
-	// End robot management functions /
-
-	// Trigger card functions:
+	
+	pollSuccess(device, error, robotStatus) {
+		var robot = this.getRobot(device);
+		
+		if (!error && robot) {
+			this.robotStatusUpdate(device, robot.cachedStatus, robotStatus);
+			robot.cachedStatus = robotStatus;
+		}
+	}
 
 	// This function is run every time the Neato servers have been polled
 	robotStatusUpdate(device, cachedStatus, freshStatus) {
@@ -217,7 +222,8 @@ module.exports = new class {
 
 		// Run on state change of state: stopped / cleaning / spot cleaning / docked / charging (to update device card and run state trigger cards)
 		if (cachedStatus == null || cachedStatus.state != freshStatus.state || cachedStatus.details.isCharging != freshStatus.details.isCharging || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
-			this.flows.robotUpdateDeviceCard(device, cachedStatus, freshStatus);
+			this.flows.robotStateChanged(device, cachedStatus, freshStatus);
+			this.deviceCard.robotStateChanged(device, cachedStatus, freshStatus);
 		}
 
 		// Run on change of docked status (run trigger cards)
@@ -233,9 +239,14 @@ module.exports = new class {
 		// Run on change of battery level (update device card)
 		if (cachedStatus == null || cachedStatus.details.charge != freshStatus.details.charge) {
 			this.flows.robotBatteryLevelChanged(device, cachedStatus, freshStatus);
+			this.deviceCard.robotBatteryLevelChanged(device, cachedStatus, freshStatus);
 		}
 	}
 	
+	// End robot management functions /
+	
+
+	// Start Helper functions
 	
 	// Helper function to get the corresponding robot for a Homey 'device_data' object
 	getRobot(device) {
@@ -287,4 +298,6 @@ module.exports = new class {
 		Homey.log('[Info] Robot state helper function detected state: ' + state)
 		return state;
 	}
+	
+	// End helper functions /
 }
