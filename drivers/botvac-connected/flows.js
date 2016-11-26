@@ -64,23 +64,6 @@ module.exports = class {
 
 	// Condition card function
 
-	condition_busy(callback, args) {
-		var robot = this.driver.getRobot(args.device);
-
-		if (robot.cachedStatus.state == 2)
-		{
-			var busy_boolean = true
-		}
-		else
-		{
-			var busy_boolean = false
-		}
-
-		Homey.log("[Condition flow card] 'is busy': current state for robot " + robot.name + " is '" + busy_boolean + "'");
-		// Return true when state equals 2
-		callback(null, paused_boolean);
-	}
-
 	condition_docked(callback, args) {
 		var robot = this.driver.getRobot(args.device);
 
@@ -97,6 +80,23 @@ module.exports = class {
 		callback(null, (robot.cachedStatus.details.isCharging));
 	}
 	
+	condition_busy(callback, args) {
+		var robot = this.driver.getRobot(args.device);
+
+		if (robot.cachedStatus.state == 2)
+		{
+			var busy_boolean = true
+		}
+		else
+		{
+			var busy_boolean = false
+		}
+
+		Homey.log("[Condition flow card] 'is busy': current state for robot " + robot.name + " is '" + busy_boolean + "'");
+		// Return true when state equals 2
+		callback(null, busy_boolean);
+	}
+
 	condition_paused(callback, args) {
 		var robot = this.driver.getRobot(args.device);
 		
