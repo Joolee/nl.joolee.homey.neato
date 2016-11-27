@@ -6,10 +6,10 @@ module.exports = class {
 		this.driver = driver;
 		
 		// Action flows
-		Homey.manager('flow').on('action.start_house_cleaning', this.action_start_house_cleaning.bind(this));
+		Homey.manager('flow').on('action.start_house_cleaning', this.action_start_resume_house_cleaning.bind(this));
+		Homey.manager('flow').on('action.resume_cleaning', this.action_start_resume_house_cleaning.bind(this));
 		Homey.manager('flow').on('action.stop_cleaning', this.action_stop_cleaning.bind(this));
 		Homey.manager('flow').on('action.pause_cleaning', this.action_pause_cleaning.bind(this));
-		Homey.manager('flow').on('action.resume_cleaning', this.action_resume_cleaning.bind(this));
 		Homey.manager('flow').on('action.send_to_base', this.action_send_to_base.bind(this));
 		Homey.manager('flow').on('action.start_spot_cleaning', this.action_start_spot_cleaning.bind(this));
 
@@ -23,7 +23,7 @@ module.exports = class {
 
 	robotStateChanged(device, cachedStatus, freshStatus) {
 		var robot = this.driver.getRobot(device);
-		var parsedState = this.driver.parseState(freshStatus);
+		var parsedState = this.driver.parseState4Homey(freshStatus);
 		Homey.log('[Info] Robot state status changed to: ' + parsedState + ' for robot ' + robot.name);
 
 		// Fire corresponding trigger card but not when the app has just initialised
@@ -39,7 +39,7 @@ module.exports = class {
 
 	robotDockedChanged(device, cachedStatus, freshStatus) {
 		var robot = this.driver.getRobot(device);
-		var parsedState = this.driver.parseState(freshStatus);
+		var parsedState = this.driver.parseState4Homey(freshStatus);
 		
 		Homey.log('[Info] Docking status changed to: ' + freshStatus.details.isDocked + ' for robot ' + robot.name);
 
@@ -135,35 +135,67 @@ module.exports = class {
 
 	// Action card functions
 
-	action_start_house_cleaning(callback, args) {
+	action_start_resume_house_cleaning(callback, args) {
 		var robot = this.driver.getRobot(args.device);
 		
 		Homey.log("[Info] Attempting to start house cleaning:", robot.name);
 
-		robot.startCleaning(args.cleaning_mode == 'true', (error, result) => {
-			// Homey.log(error, result)
-			if (error) {
-				Homey.log("[Error] Attempting to start house cleaning:", error)
+		// Throw error when the robot hasn't been initialized yet
+		if(robot.cachedStatus == null)
+		{
+			Homey.log("[Error] Could not start house cleaning:", robot.name, "Robot has not been initialized yet.", robot);
+			callback("[Error] Could not start house cleaning: " + robot.name + ", Robot has not been initialized yet.", false)
+		}
+		else
+		{
+		
+			// When idle, start cleaning!
+			if(robot.cachedStatus.state == 1) {
+				robot.startCleaning(args.cleaning_mode == 'true', (error, result) => {
+					if (error) {
+						Homey.log("[Error] Attempted to start house cleaning:", error)
+					}
+					else {
+						Homey.log("[Success] Attempted to start house cleaning:", result)
+					}
+					
+					callback(error, result)
+				});
 			}
+			// When busy, do nothing!
+			else if(robot.cachedStatus.state == 2) {
+				callback(null, true)
+			}
+			// When paused, resume cleaning!
+			else if(robot.cachedStatus.state == 3) {
+				robot.resumeCleaning((error, result) => {
+					if (error) {
+						Homey.log("[Error] Attempted to resume cleaning:", error)
+					}
+					else {
+						Homey.log("[Success] Attempted to resume cleaning:", result)
+					}
+					callback(error, result)
+				});
+			} 
+			// Else, return error
 			else {
-				Homey.log("[Success] Attempting to start house cleaning:", result)
+				callback('Robot is in error state', false)
 			}
-			
-			callback(error, result)
-		});
+		}
 	}
 
 	action_stop_cleaning(callback, args) {
-		var robot = this.robots[args.device.id];
+		var robot = this.driver.getRobot(args.device);
 		Homey.log("[Info] Attempting to stop cleaning:", robot.name);
 
 		robot.stopCleaning((error, result) => {
 			// Homey.log(error, result)
 			if (error) {
-				Homey.log("[Error] Attempting to stop cleaning:", error)
+				Homey.log("[Error] Attempted to stop cleaning:", error)
 			}
 			else {
-				Homey.log("[Success] Attempting to stop cleaning:", result)
+				Homey.log("[Success] Attempted to stop cleaning:", result)
 			}
 			
 			callback(error, result)
@@ -171,39 +203,23 @@ module.exports = class {
 	}
 
 	action_pause_cleaning(callback, args) {
-		var robot = this.robots[args.device.id];
+		var robot = this.driver.getRobot(args.device);
 		Homey.log("[Info] Attempting to pause cleaning:", robot.name);
 
 		robot.pauseCleaning((error, result) => {
 			// Homey.log(error, result)
 			if (error) {
-				Homey.log("[Error] Attempting to pause cleaning:", error)
+				Homey.log("[Error] Attempted to pause cleaning:", error)
 			}
 			else {
-				Homey.log("[Success] Attempting to pause cleaning:", result)
-			}
-			callback(error, result)
-		});
-	}
-
-	action_resume_cleaning(callback, args) {
-		var robot = this.robots[args.device.id];
-		Homey.log("[Info] Attempting to resume cleaning:", robot.name);
-
-		robot.resumeCleaning((error, result) => {
-			// Homey.log(error, result)
-			if (error) {
-				Homey.log("[Error] Attempting to resume cleaning:", error)
-			}
-			else {
-				Homey.log("[Success] Attempting to resume cleaning:", result)
+				Homey.log("[Success] Attempted to pause cleaning:", result)
 			}
 			callback(error, result)
 		});
 	}
 
 	action_send_to_base(callback, args) {
-		var robot = this.robots[args.device.id];
+		var robot = this.driver.getRobot(args.device);
 		Homey.log("[Info] Attempting to send to base:", robot.name);
 
 		this.robots[args.device.id].sendToBase((error, result) => {
@@ -219,7 +235,7 @@ module.exports = class {
 	}
 
 	action_start_spot_cleaning(callback, args) {
-		var robot = this.robots[args.device.id];
+		var robot = this.driver.getRobot(args.device);
 		Homey.log("[Info] Attempting to start spot cleaning:", robot.name, args);
 
 		robot.startSpotCleaning(args.cleaning_mode == 'true', args.spot_width, args.spot_height, args.cleaning_frequency == 'true', (error, result) => {
@@ -240,7 +256,7 @@ module.exports = class {
 
 	// Trigger card helper function to add some debug information
 	_triggerDevice(eventName, tokens, state, device, callback) {
-		var robot = this.robots[device.id];
+		var robot = this.driver.getRobot(device);
 		console.log('[Trigger Flow card] \'' + eventName + '\' for robot ' + robot.name);
 		
 		if (typeof callback !== 'function') {

@@ -291,6 +291,11 @@ function doAction(robot, command, params, callback) {
         var hmac = crypto.createHmac('sha256', robot._secret).update(data).digest('hex');
 
 		var failed = (message) => {
+			if(err.stack)
+			{
+				Homey.log('I got a stacktrace!', err.stack);
+			}
+			
 			Homey.log("Error performing API call", command, message);
 			if (typeof callback === 'function') {
 				callback(true, "Error: " + message);
@@ -319,7 +324,7 @@ function doAction(robot, command, params, callback) {
 				}
 				else
 				{
-					Homey.log('Failed sending command to Robot', response);
+					Homey.log('Failed sending command to Robot', response.message);
 					failed(response.data.message);
 				}
 				

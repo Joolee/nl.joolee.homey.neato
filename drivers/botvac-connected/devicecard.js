@@ -33,7 +33,7 @@ module.exports = class {
 		
 		if (robot && typeof(robot.cachedStatus) == 'object') {
 
-			var previousStatus = this.driver.parseState(robot.cachedStatus);
+			var previousStatus = this.driver.parseState4Homey(robot.cachedStatus);
 
 			Homey.log('[Info] (Picker) Set vacuum state to', command);
 
@@ -102,7 +102,7 @@ module.exports = class {
 	
 	robotStateChanged(device, cachedStatus, freshStatus) {
 		var robot = this.driver.getRobot(device);
-		var parsedState = this.driver.parseState(freshStatus);
+		var parsedState = this.driver.parseState4Homey(freshStatus);
 
 		// Notify Homey for device card update
 		// Also do this when the app has just been initialised

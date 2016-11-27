@@ -166,8 +166,9 @@ module.exports = new class {
 			Homey.log('[Info] Initialising robot', settings.name + ', current settings:');
 			Homey.log(settings);
 
-			var robot = this.robots[device.id] = new Robot(settings.name, settings.serial, settings.secret_key);
-
+			this.robots[device.id] = new Robot(settings.name, settings.serial, settings.secret_key);
+			
+			var robot = this.getRobot(device);
 			// Get robot state on initialise
 			robot.getState((error, robotStatus) => {
 				if (!error && robotStatus.meta.modelName == 'BotVacConnected') {
@@ -207,37 +208,41 @@ module.exports = new class {
 		var robot = this.getRobot(device);
 		
 		if (!error && robot) {
-			this.robotStatusUpdate(device, robot.cachedStatus, robotStatus);
+			Homey.log("[Success] Updated data from Neato server for robot: " + robot.name);
+			
+			try {
+				this.robotStatusUpdate(device, robot.cachedStatus, robotStatus);
+			} catch(e) {
+				Homey.log('[Error!] robotStatusUpdate:');
+				Homey.log(e.stack);
+			}
+			
 			robot.cachedStatus = robotStatus;
+		}
+		else {
+			Homey.log("[Error] Failed to update data from Neato server for robot: " + robot.name);
 		}
 	}
 
 	// This function is run every time the Neato servers have been polled
 	robotStatusUpdate(device, cachedStatus, freshStatus) {
-		Homey.log("[Success] Updated data from Neato server for robot: " + this.getRobot(device).name);
-		// Homey.log("Cached status:");
-		// Homey.log(cachedStatus);
-		// Homey.log("Fresh status:");
-		// Homey.log(freshStatus);
 
 		// Run on state change of state: stopped / cleaning / spot cleaning / docked / charging (to update device card and run state trigger cards)
 		if (cachedStatus == null || cachedStatus.state != freshStatus.state || cachedStatus.details.isCharging != freshStatus.details.isCharging || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
+			Homey.log('[Info] robotStatusUpdate: State Changed');
 			this.flows.robotStateChanged(device, cachedStatus, freshStatus);
 			this.deviceCard.robotStateChanged(device, cachedStatus, freshStatus);
 		}
 
-		// Run on change of docked status (run trigger cards)
-		if (cachedStatus == null || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
-			this.flows.robotDockedChanged(device, cachedStatus, freshStatus);
-		}
-		
 		// Run on change of charge status (run trigger cards)
 		if (cachedStatus == null || cachedStatus.details.isDocked != freshStatus.details.isDocked) {
+			Homey.log('[Info] robotStatusUpdate: Dock Changed');
 			this.flows.robotDockedChanged(device, cachedStatus, freshStatus);
 		}
 
 		// Run on change of battery level (update device card)
 		if (cachedStatus == null || cachedStatus.details.charge != freshStatus.details.charge) {
+			Homey.log('[Info] robotStatusUpdate: Battery Changed');
 			this.flows.robotBatteryLevelChanged(device, cachedStatus, freshStatus);
 			this.deviceCard.robotBatteryLevelChanged(device, cachedStatus, freshStatus);
 		}
@@ -266,7 +271,7 @@ module.exports = new class {
 	
 	
 	// Helper function to convert the Neato status object to something Homey will understand (stopped, cleaning, spot_cleaning, docked or charging)
-	parseState(robotData) {
+	parseState4Homey(robotData) {
 	
 		Homey.log('[Info] Robot state helper function running...');
 		Homey.log('[Info] Analysing new robot data:');
@@ -293,6 +298,51 @@ module.exports = new class {
 		// device card state == charging
 		if (robotData.details.isCharging) {
 			state = 'charging';
+		}
+
+		Homey.log('[Info] Robot state helper function detected state: ' + state)
+		return state;
+	}
+	
+	parseState(robotData) {
+	
+		Homey.log('[Info] Robot state helper function running...');
+		Homey.log('[Info] Analysing new robot data:');
+		Homey.log(robotData);
+		
+		// device card default state == stopped
+		var state = 'stopped';
+
+		// 1 == idle
+		if(robotData.state == 1) {
+			// device card state == docked
+			if (robotData.details.isDocked) {
+				state = 'docked';
+			}
+			
+			// device card state == charging
+			if (robotData.details.isCharging) {
+				state = 'charging';
+			}
+		}
+		
+		// 2 == busy
+		else if (robotData.state == 2) {
+			// device card state == cleaning
+			if (robotData.action == 1) {
+				state = 'cleaning';
+			// device card state == spot cleaning
+			} else if (robotData.action == 2) {
+				state = 'spot_cleaning';
+			}
+		}
+		
+		else if (robotData.state == 3) {
+			state = 'paused';
+		}
+
+		else if (robotData.state == 4) {
+			state = 'error';
 		}
 
 		Homey.log('[Info] Robot state helper function detected state: ' + state)
