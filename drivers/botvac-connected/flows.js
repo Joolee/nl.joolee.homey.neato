@@ -143,8 +143,8 @@ module.exports = class {
 		// Throw error when the robot hasn't been initialized yet
 		if(robot.cachedStatus == null)
 		{
-			Homey.log("[Error] Could not start house cleaning:", robot.name, "Robot has not been initialized yet.", robot);
-			callback("[Error] Could not start house cleaning: " + robot.name + ", Robot has not been initialized yet.", false)
+			Homey.log("[Error] Could not start house cleaning:", robot.name, "Robot has not been initialised yet.", robot);
+			callback("[Error] Could not start house cleaning: " + robot.name + ", Robot has not been initialised yet.", false)
 		}
 		else
 		{
@@ -222,7 +222,7 @@ module.exports = class {
 		var robot = this.driver.getRobot(args.device);
 		Homey.log("[Info] Attempting to send to base:", robot.name);
 
-		this.robots[args.device.id].sendToBase((error, result) => {
+		robot.sendToBase((error, result) => {
 			// Homey.log(error, result)
 			if (error) {
 				Homey.log("[Error] Send to base:", error)
